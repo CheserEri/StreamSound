@@ -1,4 +1,4 @@
-# StreamSound · 私有流媒体音乐播放器
+# StreamSound（流声）· 私有流媒体音乐播放器
 ## 产品需求文档 (PRD) v1.0
 
 | 字段 | 内容 |
@@ -313,4 +313,4 @@ RESTful 风格，JSON 数据格式。
 
 ---
 
-*Harmonia · PRD v1.0 · 内部文档*
+*StreamSound（流声）· PRD v1.0 · 内部文档*

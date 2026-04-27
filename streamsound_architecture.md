@@ -33,8 +33,8 @@
 ┌────────────────────────▼────────────────────────┐
 │                  数据持久层                       │
 │                                                  │
-36→│   SQLite 数据库文件          本地音乐文件系统     │
-37→│   ~/streamsound/data.db         /music/**/*          │
+│   SQLite 数据库文件          本地音乐文件系统     │
+│   ~/streamsound/data.db      /music/**/*          │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -388,7 +388,7 @@ REQUIRE_APPROVAL=false
 
 ```bash
 # 1. 安装依赖
-cd harmonia-server
+cd streamsound-server
 npm install
 
 # 2. 编译 TypeScript
@@ -442,4 +442,4 @@ sudo ufw allow in on eth0 to any port 3000 proto tcp
 
 ---
 
-*Harmonia · 系统架构文档 · 内部文档*
+*StreamSound · 系统架构文档 · 内部文档*
