@@ -106,4 +106,4 @@ StreamSound 前后端作为独立仓库分别维护版本号，通过 API 版本
 
 ---
 
-*Harmonia · 版本号规则 · 内部文档*
+*StreamSound · 版本号规则 · 内部文档*
