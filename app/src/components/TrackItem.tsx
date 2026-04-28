@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import FastImage from 'react-native-fast-image';
-import { getCoverUrl } from '../services/player';
+import CoverImage from './CoverImage';
 import type { TrackListItem } from '../types';
 
 interface TrackItemProps {
@@ -23,16 +22,7 @@ export default function TrackItem({ track, isActive, onPress }: TrackItemProps) 
       style={[styles.container, isActive && styles.containerActive]}
       onPress={onPress}
     >
-      {track.hasCover ? (
-        <FastImage
-          source={{ uri: getCoverUrl(track.id) }}
-          style={styles.cover}
-        />
-      ) : (
-        <View style={[styles.cover, styles.coverPlaceholder]}>
-          <Text style={styles.coverText}>♪</Text>
-        </View>
-      )}
+      <CoverImage trackId={track.id} hasCover={track.hasCover} size={48} />
 
       <View style={styles.info}>
         <Text

@@ -13,8 +13,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import api from '../services/api';
 import { usePlayer } from '../hooks/usePlayer';
 import type { RootStackParamList, TrackListItem } from '../types';
-import { getCoverUrl } from '../services/player';
-import FastImage from 'react-native-fast-image';
+import CoverImage from '../components/CoverImage';
 
 type RouteProps = RouteProp<RootStackParamList, 'Folder'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -136,16 +135,7 @@ export default function FolderScreen() {
               ]}
               onPress={() => handleTrackPress(item)}
             >
-              {item.hasCover ? (
-                <FastImage
-                  source={{ uri: getCoverUrl(item.id) }}
-                  style={styles.trackCover}
-                />
-              ) : (
-                <View style={[styles.trackCover, styles.trackCoverPlaceholder]}>
-                  <Text style={styles.trackCoverText}>♪</Text>
-                </View>
-              )}
+              <CoverImage trackId={item.id} hasCover={item.hasCover} size={48} />
               <View style={styles.trackInfo}>
                 <Text
                   style={[

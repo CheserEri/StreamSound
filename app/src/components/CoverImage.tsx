@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ActivityIndicator, StyleSheet, type ViewStyle } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { getCoverUrl } from '../services/player';
 
@@ -7,49 +7,76 @@ interface CoverImageProps {
   trackId: number;
   hasCover: boolean;
   size?: number;
-  style?: object;
+  borderRadius?: number;
+  style?: ViewStyle;
 }
 
-export default function CoverImage({
+const CoverImage = React.memo(function CoverImage({
   trackId,
   hasCover,
   size = 48,
+  borderRadius = 6,
   style,
 }: CoverImageProps) {
-  if (!hasCover) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  if (!hasCover || error) {
     return (
       <View
         style={[
           styles.placeholder,
-          { width: size, height: size },
+          { width: size, height: size, borderRadius },
           style,
         ]}
       >
-        <View style={styles.placeholderText}>♪</View>
+        <Text style={styles.placeholderText}>♪</Text>
       </View>
     );
   }
 
   return (
-    <FastImage
-      source={{ uri: getCoverUrl(trackId) }}
-      style={[
-        { width: size, height: size },
-        style,
-      ]}
-    />
+    <View style={[{ width: size, height: size }, style]}>
+      <FastImage
+        source={{
+          uri: getCoverUrl(trackId),
+          cache: FastImage.cacheControl.immutable,
+        }}
+        style={{ width: size, height: size, borderRadius }}
+        onLoadEnd={() => setLoading(false)}
+        onError={() => {
+          setLoading(false);
+          setError(true);
+        }}
+      />
+      {loading && (
+        <ActivityIndicator
+          size="small"
+          color="#666"
+          style={styles.loader}
+        />
+      )}
+    </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   placeholder: {
     backgroundColor: '#2a2a2a',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 6,
   },
   placeholderText: {
     fontSize: 20,
     color: '#666',
   },
+  loader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
 });
+
+export default CoverImage;

@@ -8,24 +8,40 @@ export function useSearch() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const search = useCallback(async (q: string) => {
+    // Cancel previous in-flight request
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+
     if (!q.trim()) {
       setResult(null);
+      setIsLoading(false);
       return;
     }
 
+    const controller = new AbortController();
+    abortRef.current = controller;
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await api.get('/search', { params: { q, limit: 20 } });
+      const response = await api.get('/search', {
+        params: { q, limit: 20 },
+        signal: controller.signal,
+      });
       setResult(response.data.data);
-    } catch (err) {
-      setError('搜索失败，请检查网络');
-      setResult(null);
+    } catch (err: any) {
+      if (err?.code !== 'ERR_CANCELED') {
+        setError('搜索失败，请检查网络');
+        setResult(null);
+      }
     } finally {
-      setIsLoading(false);
+      if (!controller.signal.aborted) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
@@ -43,9 +59,16 @@ export function useSearch() {
   );
 
   const clearSearch = useCallback(() => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
     setQuery('');
     setResult(null);
     setError(null);
+    setIsLoading(false);
   }, []);
 
   return {

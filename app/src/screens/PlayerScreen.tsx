@@ -9,11 +9,11 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { usePlayer } from '../hooks/usePlayer';
 import { useSettingsStore } from '../store';
-import { getCoverUrl } from '../services/player';
 import api from '../services/api';
+import { getCachedLyrics, setCachedLyrics } from '../services/storage';
 import type { TrackDetail } from '../types';
-import FastImage from 'react-native-fast-image';
 import Slider from '@react-native-community/slider';
+import CoverImage from '../components/CoverImage';
 import LyricsView from '../components/LyricsView';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -39,11 +39,36 @@ export default function PlayerScreen() {
   const [trackDetail, setTrackDetail] = useState<TrackDetail | null>(null);
 
   useEffect(() => {
-    if (currentTrack) {
-      api.get(`/library/tracks/${currentTrack.id}`).then((res) => {
-        setTrackDetail(res.data.data);
-      });
+    if (!currentTrack) {
+      setTrackDetail(null);
+      return;
     }
+
+    // Show cached lyrics immediately
+    const cached = getCachedLyrics(currentTrack.id);
+    if (cached) {
+      setTrackDetail({
+        ...currentTrack,
+        bitrate: null,
+        sampleRate: null,
+        mimeType: null,
+        fileSize: null,
+        lyrics: cached,
+        isFavorited: false,
+      });
+    } else {
+      setTrackDetail(null);
+    }
+
+    // Fetch fresh data from API
+    api.get(`/library/tracks/${currentTrack.id}`).then((res) => {
+      setTrackDetail(res.data.data);
+      if (res.data.data.lyrics) {
+        setCachedLyrics(currentTrack.id, res.data.data.lyrics);
+      }
+    }).catch(() => {
+      // Network error — keep cached lyrics if available
+    });
   }, [currentTrack?.id]);
 
   const formatTime = (seconds: number) => {
@@ -106,16 +131,13 @@ export default function PlayerScreen() {
       <View style={styles.mainContent}>
         {/* Cover */}
         <View style={styles.coverContainer}>
-          {currentTrack.hasCover ? (
-            <FastImage
-              source={{ uri: getCoverUrl(currentTrack.id) }}
-              style={styles.cover}
-            />
-          ) : (
-            <View style={[styles.cover, styles.coverPlaceholder]}>
-              <Text style={styles.coverPlaceholderText}>♪</Text>
-            </View>
-          )}
+          <CoverImage
+            trackId={currentTrack.id}
+            hasCover={currentTrack.hasCover}
+            size={COVER_SIZE}
+            borderRadius={12}
+            style={styles.cover}
+          />
         </View>
 
         {/* Lyrics area */}
@@ -241,23 +263,11 @@ const styles = StyleSheet.create({
     width: COVER_SIZE + 20,
   },
   cover: {
-    width: COVER_SIZE,
-    height: COVER_SIZE,
-    borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 16,
     elevation: 8,
-  },
-  coverPlaceholder: {
-    backgroundColor: '#1a1a1a',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  coverPlaceholderText: {
-    fontSize: 48,
-    color: '#333',
   },
   lyricsContainer: {
     flex: 1,

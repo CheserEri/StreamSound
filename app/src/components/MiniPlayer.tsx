@@ -3,9 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { usePlayer } from '../hooks/usePlayer';
-import { getCoverUrl } from '../services/player';
+import CoverImage from './CoverImage';
 import type { RootStackParamList } from '../types';
-import FastImage from 'react-native-fast-image';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -30,16 +29,7 @@ export default function MiniPlayer() {
       </View>
 
       <View style={styles.content}>
-        {currentTrack.hasCover ? (
-          <FastImage
-            source={{ uri: getCoverUrl(currentTrack.id) }}
-            style={styles.cover}
-          />
-        ) : (
-          <View style={[styles.cover, styles.coverPlaceholder]}>
-            <Text style={styles.coverText}>♪</Text>
-          </View>
-        )}
+        <CoverImage trackId={currentTrack.id} hasCover={currentTrack.hasCover} size={44} />
 
         <View style={styles.info}>
           <Text style={styles.title} numberOfLines={1}>

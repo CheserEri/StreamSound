@@ -5,13 +5,29 @@ import TrackPlayer, {
   RepeatMode,
   type Track as RNTPTrack,
 } from 'react-native-track-player';
-import { getNumber, setNumber, STORAGE_KEYS } from '../services/storage';
+import {
+  getNumber,
+  setNumber,
+  getString,
+  STORAGE_KEYS,
+  getPersistedQueue,
+  setPersistedQueue,
+  clearPersistedQueue,
+} from '../services/storage';
 import { getServerUrl, reportPlayHistory } from '../services/api';
-import { getString } from '../services/storage';
 import type { TrackListItem, PlayMode } from '../types';
 
 // Report history after 30 seconds of playback
 const HISTORY_REPORT_THRESHOLD = 30;
+
+// Debounced queue persistence
+let persistTimeout: ReturnType<typeof setTimeout> | null = null;
+function persistQueueDebounced(queue: TrackListItem[], index: number) {
+  if (persistTimeout) clearTimeout(persistTimeout);
+  persistTimeout = setTimeout(() => {
+    setPersistedQueue(queue, index);
+  }, 300);
+}
 
 interface PlayerState {
   queue: TrackListItem[];
@@ -96,6 +112,17 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         await TrackPlayer.setRepeatMode(RepeatMode.Track);
       }
 
+      // Restore persisted queue
+      const persisted = getPersistedQueue();
+      if (persisted && persisted.queue.length > 0) {
+        const { queue, index } = persisted;
+        const rntpTracks = queue.map(mapTrackToRNTP);
+        await TrackPlayer.add(rntpTracks);
+        const safeIndex = Math.min(index, queue.length - 1);
+        await TrackPlayer.skip(safeIndex);
+        set({ queue, currentIndex: safeIndex });
+      }
+
       // Listen for state changes
       TrackPlayer.addEventListener(Event.PlaybackState, (event) => {
         set({ isPlaying: event.state === State.Playing });
@@ -120,6 +147,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       TrackPlayer.addEventListener(Event.PlaybackActiveTrackChanged, (event) => {
         if (event.index !== undefined) {
           set({ currentIndex: event.index });
+          persistQueueDebounced(get().queue, event.index);
         }
       });
 
@@ -138,12 +166,17 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     await TrackPlayer.skip(startIndex);
     await TrackPlayer.play();
     set({ queue: tracks, currentIndex: startIndex, isPlaying: true, reportedTracks: new Set() });
+    persistQueueDebounced(tracks, startIndex);
   },
 
   appendToQueue: async (tracks: TrackListItem[]) => {
     const rntpTracks = tracks.map(mapTrackToRNTP);
     await TrackPlayer.add(rntpTracks);
-    set((state) => ({ queue: [...state.queue, ...tracks] }));
+    set((state) => {
+      const newQueue = [...state.queue, ...tracks];
+      persistQueueDebounced(newQueue, state.currentIndex);
+      return { queue: newQueue };
+    });
   },
 
   play: async () => {
@@ -174,6 +207,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     await TrackPlayer.skip(nextIndex);
     await TrackPlayer.play();
     set({ currentIndex: nextIndex, isPlaying: true });
+    persistQueueDebounced(queue, nextIndex);
   },
 
   skipToPrevious: async () => {
@@ -192,6 +226,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     await TrackPlayer.skip(prevIndex);
     await TrackPlayer.play();
     set({ currentIndex: prevIndex, isPlaying: true });
+    persistQueueDebounced(get().queue, prevIndex);
   },
 
   seekTo: async (position: number) => {
@@ -233,10 +268,3 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     }
   },
 }));
-
-// Storage key for play mode
-declare module '../services/storage' {
-  interface STORAGE_KEYS {
-    PLAY_MODE: 'play_mode';
-  }
-}
