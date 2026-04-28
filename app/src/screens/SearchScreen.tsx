@@ -10,9 +10,8 @@ import {
 } from 'react-native';
 import { useSearch } from '../hooks/useSearch';
 import { usePlayer } from '../hooks/usePlayer';
-import { getCoverUrl } from '../services/player';
+import CoverImage from '../components/CoverImage';
 import type { TrackListItem, SearchTrack, SearchArtist, SearchAlbum } from '../types';
-import FastImage from 'react-native-fast-image';
 
 interface Section {
   title: string;
@@ -123,16 +122,7 @@ export default function SearchScreen() {
           style={styles.trackItem}
           onPress={() => handleTrackPress(track)}
         >
-          {track.hasCover ? (
-            <FastImage
-              source={{ uri: getCoverUrl(track.id) }}
-              style={styles.trackCover}
-            />
-          ) : (
-            <View style={[styles.trackCover, styles.trackCoverPlaceholder]}>
-              <Text style={styles.trackCoverText}>♪</Text>
-            </View>
-          )}
+          <CoverImage trackId={track.id} hasCover={track.hasCover} size={48} />
           <View style={styles.trackInfo}>
             <Text style={styles.trackTitle} numberOfLines={1}>
               {renderHighlight(track.highlight?.title, track.title)}

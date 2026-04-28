@@ -1,11 +1,6 @@
 import { readFile, readdir } from 'fs/promises';
 import { dirname, join, basename } from 'path';
 
-interface LRCLine {
-  time: number;
-  text: string;
-}
-
 export function parseLRC(content: string): string {
   const lines = content.split('\n');
   const result: string[] = [];
@@ -22,6 +17,16 @@ export function parseLRC(content: string): string {
     }
   }
 
+  return result.join('\n');
+}
+
+export function syncTextToLRC(syncText: { timestamp: number; text: string }[]): string {
+  const result: string[] = [];
+  for (const item of syncText) {
+    if (!item.text) continue;
+    const seconds = item.timestamp / 1000;
+    result.push(`[${formatTime(seconds)}]${item.text}`);
+  }
   return result.join('\n');
 }
 

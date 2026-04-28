@@ -1,6 +1,7 @@
 import { parseFile } from 'music-metadata';
 import { extname } from 'path';
 import { MIME_TYPES } from '../types/index.js';
+import { syncTextToLRC } from './lyrics.js';
 
 export interface TrackMetadata {
   title: string;
@@ -36,7 +37,11 @@ export async function extractMetadata(filePath: string): Promise<TrackMetadata> 
     let lyrics: string | null = null;
     if (common.lyrics && common.lyrics.length > 0) {
       const firstLyric = common.lyrics[0];
-      lyrics = typeof firstLyric === 'string' ? firstLyric : null;
+      if (typeof firstLyric === 'string') {
+        lyrics = firstLyric;
+      } else if (firstLyric && 'syncText' in firstLyric && Array.isArray((firstLyric as any).syncText)) {
+        lyrics = syncTextToLRC((firstLyric as any).syncText);
+      }
     }
 
     // Parse title from filename if missing

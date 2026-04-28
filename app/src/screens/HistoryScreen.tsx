@@ -9,9 +9,8 @@ import {
 } from 'react-native';
 import api from '../services/api';
 import { usePlayer } from '../hooks/usePlayer';
-import { getCoverUrl } from '../services/player';
+import CoverImage from '../components/CoverImage';
 import type { HistoryTrack } from '../types';
-import FastImage from 'react-native-fast-image';
 
 export default function HistoryScreen() {
   const { playTracks } = usePlayer();
@@ -103,16 +102,7 @@ export default function HistoryScreen() {
             style={styles.trackItem}
             onPress={() => handleTrackPress(item)}
           >
-            {item.hasCover ? (
-              <FastImage
-                source={{ uri: getCoverUrl(item.id) }}
-                style={styles.trackCover}
-              />
-            ) : (
-              <View style={[styles.trackCover, styles.trackCoverPlaceholder]}>
-                <Text style={styles.trackCoverText}>♪</Text>
-              </View>
-            )}
+            <CoverImage trackId={item.id} hasCover={item.hasCover} size={48} />
             <View style={styles.trackInfo}>
               <Text style={styles.trackTitle} numberOfLines={1}>
                 {item.title}

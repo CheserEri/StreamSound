@@ -1,6 +1,6 @@
 # StreamSound 开发进度
 
-## 当前版本: `0.1.0-alpha.1`
+## 当前版本: `0.1.0-alpha.2`
 
 ---
 
@@ -101,6 +101,27 @@
 - [x] `app/src/navigation/RootNavigator.tsx` — 添加 Admin 路由
 - [x] `app/src/screens/SettingsScreen.tsx` — 管理员入口按钮
 
+### Phase 5a — 后端歌词格式修复 ✅
+- [x] `server/src/services/lyrics.ts` — 新增 syncTextToLRC()，将 iTunes 同步歌词格式转为 LRC
+- [x] `server/src/services/metadata.ts` — 处理对象格式歌词（syncText），不再丢弃 iTunes 格式
+
+### Phase 5b — 网络错误重试 ✅
+- [x] `app/src/services/api.ts` — Axios 重试拦截器（1s/2s/4s 退避，最多3次，网络错误+5xx）
+- [x] `app/src/hooks/useSearch.ts` — AbortController 取消过期搜索请求，防止竞态
+- [x] `app/src/screens/PlayerScreen.tsx` — track detail 请求添加 .catch() 错误处理
+
+### Phase 5c — 歌词离线缓存 ✅
+- [x] `app/src/services/storage.ts` — MMKV 歌词缓存（最多200条，LRU淘汰）
+- [x] `app/src/screens/PlayerScreen.tsx` — 缓存优先策略：先展示缓存，再异步刷新
+
+### Phase 5d — 播放列表持久化 ✅
+- [x] `app/src/services/storage.ts` — 队列持久化辅助函数（上限500首）
+- [x] `app/src/store/playerStore.ts` — 防抖300ms写入MMKV，启动时恢复队列
+
+### Phase 5e — 封面图组件重构 ✅
+- [x] `app/src/components/CoverImage.tsx` — 增强：加载态、错误降级、React.memo、cache:immutable
+- [x] 替换7个文件的内联封面代码：PlayerScreen, FolderScreen, SearchScreen, FavoritesScreen, HistoryScreen, TrackItem, MiniPlayer
+
 ---
 
 ## 技术栈
@@ -128,13 +149,7 @@ npm run dev
 
 ---
 
-## 下一步规划 (Phase 5)
-
-### 体验优化
-- [ ] 歌词离线缓存
-- [ ] 封面图本地缓存
-- [ ] 播放列表持久化
-- [ ] 网络错误重试机制
+## 下一步规划 (Phase 6)
 
 ### 功能增强
 - [ ] 歌词搜索/匹配优化
@@ -144,4 +159,4 @@ npm run dev
 
 ---
 
-*最后更新: 2026-04-29 (Phase 4 完成)*
+*最后更新: 2026-04-29 (Phase 5 体验优化完成)*

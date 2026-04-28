@@ -37,6 +37,41 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+// Response interceptor: retry on network errors and 5xx
+const MAX_RETRIES = 3;
+const RETRY_DELAYS = [1000, 2000, 4000];
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const config = error.config as InternalAxiosRequestConfig & { __retryCount?: number };
+
+    // Don't retry cancelled requests
+    if (error.code === 'ERR_CANCELED') {
+      return Promise.reject(error);
+    }
+
+    // Don't retry if already retried max times
+    const retryCount = config.__retryCount || 0;
+    if (retryCount >= MAX_RETRIES) {
+      return Promise.reject(error);
+    }
+
+    // Retry on network error (no response) or 5xx
+    const shouldRetry =
+      !error.response || (error.response.status >= 500 && error.response.status < 600);
+
+    if (!shouldRetry) {
+      return Promise.reject(error);
+    }
+
+    config.__retryCount = retryCount + 1;
+    const delay = RETRY_DELAYS[retryCount] + Math.random() * 500;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    return api(config);
+  },
+);
+
 // Response interceptor: handle token refresh
 let isRefreshing = false;
 let failedQueue: Array<{
