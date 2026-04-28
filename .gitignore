@@ -1,0 +1,31 @@
+# Environment variables
+server/.env
+
+# Dependencies
+node_modules/
+
+# Build output
+server/dist/
+
+# Database
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Cover cache
+server/data/covers/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Test coverage
+coverage/
+
+# Logs
+*.log
