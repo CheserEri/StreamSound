@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useSearch } from '../hooks/useSearch';
 import { usePlayer } from '../hooks/usePlayer';
+import MiniPlayer from '../components/MiniPlayer';
 import CoverImage from '../components/CoverImage';
 import type { TrackListItem, SearchTrack, SearchArtist, SearchAlbum } from '../types';
 
@@ -235,6 +236,9 @@ export default function SearchScreen() {
           <Text style={styles.placeholderText}>输入关键词开始搜索</Text>
         </View>
       )}
+
+      {/* Mini Player */}
+      <MiniPlayer />
     </View>
   );
 }

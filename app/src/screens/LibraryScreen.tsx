@@ -10,6 +10,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import api from '../services/api';
+import MiniPlayer from '../components/MiniPlayer';
 import type { RootStackParamList, Folder } from '../types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Library'>;
@@ -137,6 +138,9 @@ export default function LibraryScreen() {
         }
         contentContainerStyle={styles.list}
       />
+
+      {/* Mini Player */}
+      <MiniPlayer />
     </View>
   );
 }

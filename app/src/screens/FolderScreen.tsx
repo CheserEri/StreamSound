@@ -12,6 +12,7 @@ import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import api from '../services/api';
 import { usePlayer } from '../hooks/usePlayer';
+import MiniPlayer from '../components/MiniPlayer';
 import type { RootStackParamList, TrackListItem } from '../types';
 import CoverImage from '../components/CoverImage';
 
@@ -167,6 +168,9 @@ export default function FolderScreen() {
         }
         contentContainerStyle={styles.list}
       />
+
+      {/* Mini Player */}
+      <MiniPlayer />
     </View>
   );
 }

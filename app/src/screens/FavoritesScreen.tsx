@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import api from '../services/api';
 import { usePlayer } from '../hooks/usePlayer';
+import MiniPlayer from '../components/MiniPlayer';
 import CoverImage from '../components/CoverImage';
 import type { FavoriteTrack } from '../types';
 
@@ -130,6 +131,9 @@ export default function FavoritesScreen() {
           </View>
         }
       />
+
+      {/* Mini Player */}
+      <MiniPlayer />
     </View>
   );
 }
