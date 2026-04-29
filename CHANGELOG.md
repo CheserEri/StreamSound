@@ -2,6 +2,15 @@
 
 All notable changes to StreamSound are documented in this file.
 
+## [0.2.0-alpha.5] - 2026-04-30
+
+### Added
+- 全新应用启动图标：液态玻璃风格音符设计
+  - 半透明渐变填充，非实心玻璃质感
+  - 折射高光 + 边缘光线 + 玻璃气泡装饰
+  - 已生成 mdpi/hdpi/xhdpi/xxhdpi/xxxhdpi 全密度 PNG
+- 新增 README.md 项目文档
+
 ## [0.2.0-alpha.4] - 2026-04-30
 
 ### Fixed
