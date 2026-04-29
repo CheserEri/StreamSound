@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   FlatList,
   StyleSheet,
@@ -36,6 +37,7 @@ export default function AdminScreen() {
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [musicRoot, setMusicRoot] = useState('');
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -59,10 +61,20 @@ export default function AdminScreen() {
     }
   }, []);
 
+  const fetchMusicRoot = useCallback(async () => {
+    try {
+      const response = await api.get('/admin/scan/music-root');
+      setMusicRoot(response.data.data.musicRoot);
+    } catch {
+      // Silent fail
+    }
+  }, []);
+
   useEffect(() => {
     fetchUsers();
     fetchScanStatus();
-  }, [fetchUsers, fetchScanStatus]);
+    fetchMusicRoot();
+  }, [fetchUsers, fetchScanStatus, fetchMusicRoot]);
 
   // Poll scan status while running
   useEffect(() => {
@@ -74,20 +86,25 @@ export default function AdminScreen() {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([fetchUsers(), fetchScanStatus()]);
+    await Promise.all([fetchUsers(), fetchScanStatus(), fetchMusicRoot()]);
     setRefreshing(false);
-  }, [fetchUsers, fetchScanStatus]);
+  }, [fetchUsers, fetchScanStatus, fetchMusicRoot]);
 
   const handleStartScan = useCallback(async () => {
+    const trimmedPath = musicRoot.trim();
+    if (!trimmedPath) {
+      Alert.alert('提示', '请先输入音乐文件夹路径');
+      return;
+    }
     try {
-      await api.post('/admin/scan');
+      await api.post('/admin/scan', { musicRoot: trimmedPath });
       setIsScanning(true);
       fetchScanStatus();
     } catch (error: any) {
       const message = error?.response?.data?.error?.message || '启动扫描失败';
       Alert.alert('错误', message);
     }
-  }, [fetchScanStatus]);
+  }, [fetchScanStatus, musicRoot]);
 
   const handleApproveUser = useCallback(
     async (userId: number, approved: boolean) => {
@@ -119,6 +136,17 @@ export default function AdminScreen() {
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>音乐库扫描</Text>
       <View style={styles.scanCard}>
+        <Text style={styles.pathLabel}>音乐文件夹路径</Text>
+        <TextInput
+          style={styles.pathInput}
+          value={musicRoot}
+          onChangeText={setMusicRoot}
+          placeholder="输入服务器上的音乐文件夹路径"
+          placeholderTextColor="#666"
+          editable={!isScanning}
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
         <View style={styles.scanHeader}>
           <Text style={styles.scanStatus}>
             状态: {scanState?.status === 'running' ? '扫描中...' : '空闲'}
@@ -276,6 +304,22 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginHorizontal: 16,
+  },
+  pathLabel: {
+    color: '#888',
+    fontSize: 13,
+    marginBottom: 6,
+  },
+  pathInput: {
+    backgroundColor: '#2a2a2a',
+    color: '#fff',
+    fontSize: 14,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#333',
   },
   scanHeader: {
     flexDirection: 'row',

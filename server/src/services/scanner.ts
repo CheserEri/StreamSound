@@ -13,31 +13,34 @@ let scanState: ScanState = {
   progress: null,
   startedAt: null,
   finishedAt: null,
+  musicRoot: null,
 };
 
 export function getScanState(): ScanState {
   return scanState;
 }
 
-export async function startScan(): Promise<void> {
+export async function startScan(musicRoot?: string): Promise<void> {
   if (scanState.status === 'running') {
     return;
   }
+
+  const resolvedRoot = musicRoot || config.MUSIC_ROOT;
 
   scanState = {
     status: 'running',
     progress: { scanned: 0, total: 0, added: 0, updated: 0, removed: 0 },
     startedAt: Math.floor(Date.now() / 1000),
     finishedAt: null,
+    musicRoot: resolvedRoot,
   };
 
   try {
     const db = getDb();
-    const musicRoot = config.MUSIC_ROOT;
 
     // Collect all audio files
     const files: string[] = [];
-    await walkDir(musicRoot, files);
+    await walkDir(resolvedRoot, files);
 
     scanState.progress!.total = files.length;
 
@@ -79,7 +82,7 @@ export async function startScan(): Promise<void> {
         }
 
         // Get or create folder
-        const folderId = await getOrCreateFolder(db, filePath, musicRoot);
+        const folderId = await getOrCreateFolder(db, filePath, resolvedRoot);
 
         const hasLyrics = lyrics ? 1 : 0;
         const now = Math.floor(Date.now() / 1000);

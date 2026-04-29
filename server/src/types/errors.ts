@@ -48,6 +48,7 @@ export const HIST_001 = createError('HIST_001', '曲目不存在', 'Track not fo
 export const ADMIN_001 = createError('ADMIN_001', '需要管理员权限', 'Admin role required', 403);
 export const ADMIN_002 = createError('ADMIN_002', '目标用户不存在', 'User not found', 404);
 export const ADMIN_003 = createError('ADMIN_003', '扫描任务正在进行中', 'Scan already in progress', 409);
+export const ADMIN_004 = createError('ADMIN_004', '音乐文件夹路径无效或不存在', 'Invalid or non-existent music folder path', 400);
 
 export function sendError(
   reply: { code: (status: number) => { send: (body: unknown) => void } },

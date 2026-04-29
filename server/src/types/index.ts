@@ -168,6 +168,7 @@ export interface ScanState {
   progress: ScanProgress | null;
   startedAt: number | null;
   finishedAt: number | null;
+  musicRoot: string | null;
 }
 
 // ==================== Fastify Augmentation ====================
