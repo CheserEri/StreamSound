@@ -1,19 +1,37 @@
 import type { FastifyInstance } from 'fastify';
+import { existsSync } from 'fs';
 import { getDb } from '../db/client.js';
+import { config } from '../config.js';
 import type { UserRow } from '../types/index.js';
-import { ADMIN_002, ADMIN_003, sendError } from '../types/errors.js';
+import { ADMIN_002, ADMIN_003, ADMIN_004, sendError } from '../types/errors.js';
 import { startScan, getScanState } from '../services/scanner.js';
 
 export default async function adminRoutes(fastify: FastifyInstance) {
+  // GET /admin/scan/music-root
+  fastify.get('/admin/scan/music-root', { preHandler: [fastify.requireAdmin] }, async (_request, reply) => {
+    return reply.send({
+      data: {
+        musicRoot: config.MUSIC_ROOT,
+      },
+    });
+  });
+
   // POST /admin/scan
-  fastify.post('/admin/scan', { preHandler: [fastify.requireAdmin] }, async (_request, reply) => {
+  fastify.post('/admin/scan', { preHandler: [fastify.requireAdmin] }, async (request, reply) => {
     const state = getScanState();
     if (state.status === 'running') {
       return sendError(reply, ADMIN_003);
     }
 
+    const { musicRoot } = (request.body || {}) as { musicRoot?: string };
+
+    // Validate the provided path exists
+    if (musicRoot && !existsSync(musicRoot)) {
+      return sendError(reply, ADMIN_004);
+    }
+
     // Start scan in background
-    startScan();
+    startScan(musicRoot);
 
     return reply.code(202).send({
       data: {
