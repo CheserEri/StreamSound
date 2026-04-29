@@ -2,6 +2,31 @@
 
 All notable changes to StreamSound are documented in this file.
 
+## [0.2.0-alpha.2] - 2026-04-30
+
+### Security
+- Auth plugin: added missing `return` after error responses — handlers no longer fall through on auth failure
+- FTS5 search query injection prevention (keyword now quoted)
+- Retry interceptor limited to idempotent methods (GET/HEAD/OPTIONS) — no more duplicate POST/DELETE
+
+### Fixed
+- Global error handler + 404 handler with structured error format (no more stack trace leaks)
+- Covers route: structured 404 response instead of bare empty body
+- PlayerScreen: AbortController prevents race condition on rapid track changes
+- useSearch: debounce timer + AbortController cleanup on unmount
+- FavoritesScreen, HistoryScreen, FolderScreen: AbortController for unmount cleanup
+- Replaced sync `statSync`/`existsSync` with async `fs.promises` in stream, covers, admin routes
+
+### Changed
+- **Performance**: New `usePlayerActions()` hook eliminates per-second re-renders across 6 screens
+- **Performance**: Scanner folder cache (Map) eliminates N+1 `getOrCreateFolder` queries
+- **Performance**: `updateFolderCounts` uses single GROUP BY query instead of per-folder COUNT
+- **Performance**: List endpoints use specific columns instead of `SELECT *` (excludes lyrics text)
+- **Performance**: `TrackItem` wrapped in `React.memo`
+- New shared utils: `server/src/utils/pagination.ts`, `server/src/utils/params.ts`
+- New shared utils: `app/src/utils/format.ts` (formatDuration, formatProgress, formatRelativeTime, getModeIcon, getModeLabel)
+- Deduplicated formatDuration (6 files), getModeIcon, getModeLabel across screens
+
 ## [0.2.0-alpha.1] - 2026-04-29
 
 ### Added

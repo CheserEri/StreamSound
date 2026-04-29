@@ -1,29 +1,38 @@
+/**
+ * 歌曲列表项组件
+ * 用于在列表中显示单首歌曲信息
+ */
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import CoverImage from './CoverImage';
+import { formatDuration } from '../utils/format';
 import type { TrackListItem } from '../types';
 
+/**
+ * 歌曲列表项属性接口
+ */
 interface TrackItemProps {
+  /** 歌曲信息 */
   track: TrackListItem;
+  /** 是否为当前播放歌曲 */
   isActive?: boolean;
+  /** 点击回调 */
   onPress: () => void;
 }
 
-export default function TrackItem({ track, isActive, onPress }: TrackItemProps) {
-  const formatDuration = (seconds: number | null) => {
-    if (!seconds) return '--:--';
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
+/**
+ * 歌曲列表项组件
+ */
+export default React.memo(function TrackItem({ track, isActive, onPress }: TrackItemProps) {
   return (
     <TouchableOpacity
       style={[styles.container, isActive && styles.containerActive]}
       onPress={onPress}
     >
+      {/* 封面图片 */}
       <CoverImage trackId={track.id} hasCover={track.hasCover} size={48} />
 
+      {/* 歌曲信息 */}
       <View style={styles.info}>
         <Text
           style={[styles.title, isActive && styles.titleActive]}
@@ -36,10 +45,11 @@ export default function TrackItem({ track, isActive, onPress }: TrackItemProps) 
         </Text>
       </View>
 
+      {/* 时长 */}
       <Text style={styles.duration}>{formatDuration(track.duration)}</Text>
     </TouchableOpacity>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

@@ -1,16 +1,33 @@
+/**
+ * 错误提示弹窗组件
+ * 用于显示错误信息和操作按钮
+ */
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
 
+/**
+ * 错误弹窗属性接口
+ */
 interface ErrorModalProps {
+  /** 是否显示弹窗 */
   visible: boolean;
+  /** 标题 */
   title: string;
+  /** 提示消息 */
   message: string;
+  /** 主操作按钮 */
   primaryAction?: { label: string; onPress: () => void };
+  /** 次要操作按钮 */
   secondaryAction?: { label: string; onPress: () => void };
+  /** 是否可点击背景关闭 */
   dismissable?: boolean;
+  /** 关闭回调 */
   onDismiss?: () => void;
 }
 
+/**
+ * 错误提示弹窗组件
+ */
 export default function ErrorModal({
   visible,
   title,
@@ -20,6 +37,9 @@ export default function ErrorModal({
   dismissable = true,
   onDismiss,
 }: ErrorModalProps) {
+  /**
+   * 处理背景点击
+   */
   const handleBackdropPress = () => {
     if (dismissable && onDismiss) {
       onDismiss();
@@ -43,6 +63,7 @@ export default function ErrorModal({
           <Text style={styles.message}>{message}</Text>
 
           <View style={styles.actions}>
+            {/* 次要按钮 */}
             {secondaryAction && (
               <TouchableOpacity
                 style={[styles.button, styles.secondaryButton]}
@@ -54,6 +75,7 @@ export default function ErrorModal({
               </TouchableOpacity>
             )}
 
+            {/* 主按钮 */}
             {primaryAction && (
               <TouchableOpacity
                 style={[styles.button, styles.primaryButton]}

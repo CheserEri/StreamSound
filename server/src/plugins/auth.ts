@@ -27,7 +27,7 @@ export default fp(async (fastify: FastifyInstance) => {
         request.userId = request.user.id;
         request.userRole = request.user.role;
       } catch {
-        reply.code(401).send({
+        return reply.code(401).send({
           error: {
             code: 'AUTH_003',
             message: 'Access Token 已过期',
@@ -46,7 +46,7 @@ export default fp(async (fastify: FastifyInstance) => {
         request.userId = request.user.id;
         request.userRole = request.user.role;
         if (request.user.role !== 'admin') {
-          reply.code(403).send({
+          return reply.code(403).send({
             error: {
               code: 'ADMIN_001',
               message: '需要管理员权限',
@@ -55,7 +55,7 @@ export default fp(async (fastify: FastifyInstance) => {
           });
         }
       } catch {
-        reply.code(401).send({
+        return reply.code(401).send({
           error: {
             code: 'AUTH_003',
             message: 'Access Token 已过期',
