@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Android build outputs
+android/app/build/
+android/build/
+android/.gradle/
+
+# Android local config
+android/local.properties
+
+# IDE
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
+
+# Metro
+.metro-health-check*
+
+# Buck
+ buck-out/
+ buckconfig.js
+ buckconfig.bp
+
+# Bundle artifacts
+*.jsbundle
+
+# CocoaPods
+ ios/Pods/
+ ios/Podfile.lock
+
+# C++ build cache
+app/android/app/.cxx/
