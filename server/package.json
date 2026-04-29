@@ -1,12 +1,12 @@
 {
   "name": "streamsound-server",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.3",
   "description": "StreamSound music streaming server",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc && node scripts/copy-assets.mjs",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit"
   },

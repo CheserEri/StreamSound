@@ -3,6 +3,8 @@ import TrackPlayer, {
   State,
   Event,
   RepeatMode,
+  Capability,
+  AppKilledPlaybackBehavior,
   type Track as RNTPTrack,
 } from 'react-native-track-player';
 import {
@@ -19,6 +21,12 @@ import type { TrackListItem, PlayMode } from '../types';
 
 // Report history after 30 seconds of playback
 const HISTORY_REPORT_THRESHOLD = 30;
+const PLAY_MODES: PlayMode[] = ['sequential', 'shuffle', 'repeat'];
+
+function getStoredPlayMode(): PlayMode {
+  const modeIndex = getNumber(STORAGE_KEYS.PLAY_MODE) ?? 0;
+  return PLAY_MODES[modeIndex] ?? 'sequential';
+}
 
 // Debounced queue persistence
 let persistTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -68,7 +76,7 @@ function mapTrackToRNTP(track: TrackListItem): RNTPTrack {
 export const usePlayerStore = create<PlayerState>((set, get) => ({
   queue: [],
   currentIndex: -1,
-  mode: (getNumber(STORAGE_KEYS.PLAY_MODE) as PlayMode) || 'sequential',
+  mode: getStoredPlayMode(),
   isPlaying: false,
   progress: 0,
   duration: 0,
@@ -83,31 +91,31 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       await TrackPlayer.updateOptions({
         android: {
           appKilledPlaybackBehavior:
-            TrackPlayer.AndroidPlaybackBehavior.ContinuePlayback,
+            AppKilledPlaybackBehavior.ContinuePlayback,
         },
         capabilities: [
-          TrackPlayer.Capability.Play,
-          TrackPlayer.Capability.Pause,
-          TrackPlayer.Capability.SkipToNext,
-          TrackPlayer.Capability.SkipToPrevious,
-          TrackPlayer.Capability.SeekTo,
-          TrackPlayer.Capability.Stop,
+          Capability.Play,
+          Capability.Pause,
+          Capability.SkipToNext,
+          Capability.SkipToPrevious,
+          Capability.SeekTo,
+          Capability.Stop,
         ],
         compactCapabilities: [
-          TrackPlayer.Capability.Play,
-          TrackPlayer.Capability.Pause,
-          TrackPlayer.Capability.SkipToNext,
+          Capability.Play,
+          Capability.Pause,
+          Capability.SkipToNext,
         ],
         notificationCapabilities: [
-          TrackPlayer.Capability.Play,
-          TrackPlayer.Capability.Pause,
-          TrackPlayer.Capability.SkipToNext,
-          TrackPlayer.Capability.SkipToPrevious,
+          Capability.Play,
+          Capability.Pause,
+          Capability.SkipToNext,
+          Capability.SkipToPrevious,
         ],
       });
 
       // Restore play mode
-      const savedMode = (getNumber(STORAGE_KEYS.PLAY_MODE) as PlayMode) || 'sequential';
+      const savedMode = getStoredPlayMode();
       if (savedMode === 'repeat') {
         await TrackPlayer.setRepeatMode(RepeatMode.Track);
       }
@@ -128,7 +136,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         set({ isPlaying: event.state === State.Playing });
       });
 
-      TrackPlayer.addEventListener(Event.PlaybackProgress, (event) => {
+      TrackPlayer.addEventListener(Event.PlaybackProgressUpdated, (event) => {
         set({ progress: event.position, duration: event.duration });
 
         // Report history after threshold or when track completes
@@ -152,7 +160,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       });
 
       TrackPlayer.addEventListener(Event.PlaybackPlayWhenReadyChanged, (event) => {
-        set({ isPlaying: event.playWhenReady && event.state === State.Playing });
+        set({ isPlaying: event.playWhenReady });
       });
     } catch (error) {
       console.error('Failed to setup player:', error);
@@ -236,9 +244,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   toggleMode: async () => {
     const { mode } = get();
-    const modes: PlayMode[] = ['sequential', 'shuffle', 'repeat'];
-    const nextIndex = (modes.indexOf(mode) + 1) % modes.length;
-    const nextMode = modes[nextIndex];
+    const nextIndex = (PLAY_MODES.indexOf(mode) + 1) % PLAY_MODES.length;
+    const nextMode = PLAY_MODES[nextIndex];
 
     setNumber(STORAGE_KEYS.PLAY_MODE, nextIndex);
 
