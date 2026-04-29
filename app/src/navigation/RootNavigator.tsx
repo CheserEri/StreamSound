@@ -12,19 +12,7 @@ import FavoritesScreen from '../screens/FavoritesScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import AdminScreen from '../screens/AdminScreen';
-
-export type RootStackParamList = {
-  Login: undefined;
-  Library: undefined;
-  Folder: { folderId: number; folderName: string };
-  Player: undefined;
-  Queue: undefined;
-  Search: undefined;
-  Favorites: undefined;
-  History: undefined;
-  Settings: undefined;
-  Admin: undefined;
-};
+import type { RootStackParamList } from '../types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 

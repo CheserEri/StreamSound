@@ -118,6 +118,21 @@ export interface ApiError {
   };
 }
 
+// ==================== Navigation ====================
+
+export type RootStackParamList = {
+  Login: undefined;
+  Library: undefined;
+  Folder: { folderId: number; folderName: string };
+  Player: undefined;
+  Queue: undefined;
+  Search: undefined;
+  Favorites: undefined;
+  History: undefined;
+  Settings: undefined;
+  Admin: undefined;
+};
+
 // ==================== Player ====================
 
 export type PlayMode = 'sequential' | 'shuffle' | 'repeat';

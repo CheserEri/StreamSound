@@ -1,6 +1,6 @@
 # StreamSound 开发进度
 
-## 当前版本: `0.1.0-alpha.2`
+## 当前版本: `0.1.0-alpha.3`
 
 ---
 
@@ -121,6 +121,12 @@
 ### Phase 5e — 封面图组件重构 ✅
 - [x] `app/src/components/CoverImage.tsx` — 增强：加载态、错误降级、React.memo、cache:immutable
 - [x] 替换7个文件的内联封面代码：PlayerScreen, FolderScreen, SearchScreen, FavoritesScreen, HistoryScreen, TrackItem, MiniPlayer
+### Phase 5f - APK/package stability fixes
+- [x] `app/android/app/build.gradle` - package JS bundle into APK builds so the app can start without Metro.
+- [x] `app/package.json` - add Android release/APK packaging scripts and slider dependency.
+- [x] `app/src/types/index.ts` / navigation/player files - fix TypeScript compatibility with navigation and react-native-track-player v4.
+- [x] `server/package.json` / `server/scripts/copy-assets.mjs` - copy SQL schema into `dist` during production build.
+- [x] `server/src/config.ts` - parse boolean env values such as `SCAN_ON_START=false` correctly.
 
 ---
 
@@ -159,4 +165,4 @@ npm run dev
 
 ---
 
-*最后更新: 2026-04-29 (Phase 5 体验优化完成)*
+*最后更新: 2026-04-29 (0.1.0-alpha.3 APK/package stability fixes)*

@@ -7,20 +7,22 @@ import {
   Dimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { usePlayer } from '../hooks/usePlayer';
 import { useSettingsStore } from '../store';
 import api from '../services/api';
 import { getCachedLyrics, setCachedLyrics } from '../services/storage';
-import type { TrackDetail } from '../types';
+import type { RootStackParamList, TrackDetail } from '../types';
 import Slider from '@react-native-community/slider';
 import CoverImage from '../components/CoverImage';
 import LyricsView from '../components/LyricsView';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const COVER_SIZE = SCREEN_WIDTH * 0.45;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Player'>;
 
 export default function PlayerScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const {
     currentTrack,
     isPlaying,
