@@ -2,7 +2,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { getString, setString, deleteKey, STORAGE_KEYS } from './storage';
 import type { ApiError } from '../types';
 
-let serverUrl = getString(STORAGE_KEYS.SERVER_URL) || 'http://192.168.1.100:3000';
+let serverUrl = getString(STORAGE_KEYS.SERVER_URL) || 'http://192.168.31.184:3000';
 
 const api = axios.create({
   timeout: 8000,

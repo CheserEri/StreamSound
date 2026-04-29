@@ -73,7 +73,7 @@ export default function SettingsScreen() {
               style={styles.input}
               value={editServerUrl}
               onChangeText={setEditServerUrl}
-              placeholder="http://192.168.1.100:3000"
+              placeholder="http://192.168.31.184:3000"
               placeholderTextColor="#666"
               autoCapitalize="none"
               autoCorrect={false}

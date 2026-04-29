@@ -60,7 +60,7 @@ export default function LoginScreen() {
         <View style={styles.form}>
           <TextInput
             style={styles.input}
-            placeholder="服务器地址 (如: 192.168.1.100:3000)"
+            placeholder="服务器地址 (如: 192.168.31.184:3000)"
             placeholderTextColor="#666"
             value={serverUrl}
             onChangeText={setServerUrl}

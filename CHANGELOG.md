@@ -2,6 +2,12 @@
 
 All notable changes to StreamSound are documented in this file.
 
+## [0.2.0-alpha.3] - 2026-04-30
+
+### Fixed
+- Fixed Android HTTP cleartext traffic blocked by default: added `android:usesCleartextTraffic="true"` to AndroidManifest.xml, enabling HTTP connections to local server
+- Fixed default server IP from `192.168.1.100` to `192.168.31.184` in api.ts, LoginScreen.tsx, SettingsScreen.tsx
+
 ## [0.2.0-alpha.2] - 2026-04-30
 
 ### Security
