@@ -1,6 +1,6 @@
 # StreamSound 开发进度
 
-## 当前版本: `0.1.0-alpha.3`
+## 当前版本: `0.1.0-alpha.4`
 
 ---
 
@@ -127,6 +127,12 @@
 - [x] `app/src/types/index.ts` / navigation/player files - fix TypeScript compatibility with navigation and react-native-track-player v4.
 - [x] `server/package.json` / `server/scripts/copy-assets.mjs` - copy SQL schema into `dist` during production build.
 - [x] `server/src/config.ts` - parse boolean env values such as `SCAN_ON_START=false` correctly.
+### Phase 5g - Android startup stability fixes
+- [x] `app/android/app/src/main/java/com/streamsound/MainActivity.kt` - align native component name with `app.json` (`StreamSound`).
+- [x] `app/index.js` - delay root App import until registration to surface module load errors correctly.
+- [x] `app/package.json` - add Metro config dependency and Android bundle verification script.
+- [x] `app/src/navigation/RootNavigator.tsx` - wrap navigation with `SafeAreaProvider`.
+- [x] `app/src/store/playerStore.ts` / `app/src/hooks/usePlayer.ts` - make player setup idempotent and remove redundant TrackPlayer imports.
 
 ---
 
@@ -165,4 +171,4 @@ npm run dev
 
 ---
 
-*最后更新: 2026-04-29 (0.1.0-alpha.3 APK/package stability fixes)*
+*最后更新: 2026-04-29 (0.1.0-alpha.4 Android startup stability fixes)*

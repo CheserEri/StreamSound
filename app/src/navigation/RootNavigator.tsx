@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAuthStore } from '../store';
 import LoginScreen from '../screens/LoginScreen';
 import LibraryScreen from '../screens/LibraryScreen';
@@ -20,6 +21,7 @@ export default function RootNavigator() {
   const { isAuthenticated } = useAuthStore();
 
   return (
+    <SafeAreaProvider>
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
@@ -86,5 +88,6 @@ export default function RootNavigator() {
         )}
       </Stack.Navigator>
     </NavigationContainer>
+    </SafeAreaProvider>
   );
 }

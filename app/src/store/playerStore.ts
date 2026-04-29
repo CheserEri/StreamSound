@@ -22,6 +22,7 @@ import type { TrackListItem, PlayMode } from '../types';
 // Report history after 30 seconds of playback
 const HISTORY_REPORT_THRESHOLD = 30;
 const PLAY_MODES: PlayMode[] = ['sequential', 'shuffle', 'repeat'];
+let setupPromise: Promise<void> | null = null;
 
 function getStoredPlayMode(): PlayMode {
   const modeIndex = getNumber(STORAGE_KEYS.PLAY_MODE) ?? 0;
@@ -83,6 +84,11 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   reportedTracks: new Set<number>(),
 
   setupPlayer: async () => {
+    if (setupPromise) {
+      return setupPromise;
+    }
+
+    setupPromise = (async () => {
     try {
       await TrackPlayer.setupPlayer({
         autoHandleInterruptions: true,
@@ -164,7 +170,11 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       });
     } catch (error) {
       console.error('Failed to setup player:', error);
+      setupPromise = null;
     }
+    })();
+
+    return setupPromise;
   },
 
   setQueue: async (tracks: TrackListItem[], startIndex = 0) => {

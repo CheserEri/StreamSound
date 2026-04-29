@@ -1,8 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { usePlayerStore } from '../store';
 import type { TrackListItem } from '../types';
-import { getStreamUrl } from '../services/player';
-import TrackPlayer, { type Track } from 'react-native-track-player';
 
 export function usePlayer() {
   const {
@@ -31,13 +29,6 @@ export function usePlayer() {
 
   const playTracks = useCallback(
     async (tracks: TrackListItem[], startIndex = 0) => {
-      const rntpTracks: Track[] = tracks.map((t) => ({
-        id: t.id.toString(),
-        url: getStreamUrl(t.id),
-        title: t.title,
-        artist: t.artist || undefined,
-        duration: t.duration || undefined,
-      }));
       await setQueue(tracks, startIndex);
     },
     [setQueue],

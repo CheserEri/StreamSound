@@ -2,6 +2,17 @@
 
 All notable changes to StreamSound are documented in this file.
 
+## [0.1.0-alpha.4] - 2026-04-29
+
+### Fixed
+- Fixed Android native component registration by aligning `MainActivity` with the JavaScript app name `StreamSound`.
+- Fixed Metro release bundle setup by declaring `@react-native/metro-config`.
+- Reduced misleading `AppRegistry` startup errors by delaying the root `App` import until registration.
+- Made React Native Track Player setup idempotent to avoid duplicate native player initialization.
+
+### Changed
+- Added `bundle:android` verification script for Android release JavaScript bundle checks.
+
 ## [0.1.0-alpha.3] - 2026-04-29
 
 ### Fixed
