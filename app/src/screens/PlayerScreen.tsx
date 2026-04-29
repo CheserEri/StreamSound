@@ -146,7 +146,7 @@ export default function PlayerScreen() {
         <Slider
           style={styles.slider}
           minimumValue={0}
-          maximumValue={duration || 1}
+          maximumValue={duration || currentTrack.duration || 1}
           value={progress}
           onSlidingComplete={(value) => seekTo(value)}
           minimumTrackTintColor="#fff"

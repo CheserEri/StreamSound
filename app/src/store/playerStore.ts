@@ -173,10 +173,13 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
         // 监听播放进度更新
         TrackPlayer.addEventListener(Event.PlaybackProgressUpdated, (event) => {
-          set({ progress: event.position, duration: event.duration });
-
-          // 上报播放历史
           const { currentIndex: idx, queue: q, reportedTracks: reported } = get();
+          // 流式音频可能延迟报告 duration，使用元数据作为兜底
+          let duration = event.duration;
+          if ((!duration || duration <= 0) && idx >= 0 && idx < q.length) {
+            duration = q[idx].duration || 0;
+          }
+          set({ progress: event.position, duration });
           if (idx >= 0 && idx < q.length && !reported.has(q[idx].id)) {
             const shouldReport =
               event.position >= HISTORY_REPORT_THRESHOLD ||
