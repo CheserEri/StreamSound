@@ -9,9 +9,10 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useSearch } from '../hooks/useSearch';
-import { usePlayer } from '../hooks/usePlayer';
+import { usePlayerActions } from '../hooks/usePlayer';
 import MiniPlayer from '../components/MiniPlayer';
 import CoverImage from '../components/CoverImage';
+import { formatDuration } from '../utils/format';
 import type { TrackListItem, SearchTrack, SearchArtist, SearchAlbum } from '../types';
 
 interface Section {
@@ -21,7 +22,7 @@ interface Section {
 
 export default function SearchScreen() {
   const { query, result, isLoading, error, search } = useSearch();
-  const { playTracks } = usePlayer();
+  const { playTracks } = usePlayerActions();
 
   const sections = useMemo<Section[]>(() => {
     if (!result) return [];
@@ -100,13 +101,6 @@ export default function SearchScreen() {
     },
     [result, playTracks],
   );
-
-  const formatDuration = (seconds: number | null) => {
-    if (!seconds) return '--:--';
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const renderHighlight = (text: string | undefined, fallback: string) => {
     if (!text) return fallback;

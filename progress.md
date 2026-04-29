@@ -1,6 +1,6 @@
 # StreamSound 开发进度
 
-## 当前版本: `0.1.0-alpha.4`
+## 当前版本: `0.2.0-alpha.2`
 
 ---
 
@@ -134,6 +134,33 @@
 - [x] `app/src/navigation/RootNavigator.tsx` - wrap navigation with `SafeAreaProvider`.
 - [x] `app/src/store/playerStore.ts` / `app/src/hooks/usePlayer.ts` - make player setup idempotent and remove redundant TrackPlayer imports.
 
+### Phase 6 — Code quality & performance optimization (v0.2.0-alpha.2)
+- [x] **Backend critical fixes:**
+  - Auth plugin: added missing `return` after error responses (handlers no longer fall through)
+  - Global error handler + 404 handler with structured error format
+  - Replaced sync `statSync`/`existsSync` with async `fs.promises` in stream.ts, covers.ts, admin.ts
+  - FTS5 query injection prevention in search.ts (keyword quoted)
+  - Covers route: proper Content-Type detection (jpeg/png/webp) + structured 404 response
+- [x] **Backend DB optimization:**
+  - Scanner: folder cache (Map) eliminates N+1 `getOrCreateFolder` queries
+  - `updateFolderCounts`: single GROUP BY query replaces per-folder COUNT queries
+  - Replaced `SELECT *` with specific columns (excludes lyrics) in list endpoints
+  - New shared utils: `parsePagination()`, `parseId()`, `isValidId()` — deduplicated across 5 route files
+- [x] **Frontend performance — usePlayer mass re-render fix:**
+  - New `usePlayerActions()` hook: subscribes only to stable action functions, no progress/duration
+  - FavoritesScreen, HistoryScreen, SearchScreen switched to `usePlayerActions` (no longer re-render every second)
+  - FolderScreen, QueueScreen, MiniPlayer use individual `usePlayerStore` selectors (no progress subscription)
+  - `TrackItem` wrapped in `React.memo`
+- [x] **Frontend code deduplication:**
+  - New `app/src/utils/format.ts`: `formatDuration`, `formatProgress`, `formatRelativeTime`, `getModeIcon`, `getModeLabel`
+  - Replaced 6+ duplicate `formatDuration` definitions across screens
+  - Replaced duplicate `formatTime`, `getModeIcon`, `getModeLabel` in PlayerScreen/QueueScreen
+- [x] **Frontend network fixes:**
+  - Retry interceptor now only retries GET/HEAD/OPTIONS (no more duplicate POST/DELETE)
+  - PlayerScreen: AbortController prevents race condition on rapid track changes
+  - useSearch: debounce timer + AbortController cleanup on unmount
+  - FavoritesScreen, HistoryScreen, FolderScreen: AbortController for unmount cleanup
+
 ---
 
 ## 技术栈
@@ -171,4 +198,4 @@ npm run dev
 
 ---
 
-*最后更新: 2026-04-29 (0.1.0-alpha.4 Android startup stability fixes)*
+*最后更新: 2026-04-30 (0.2.0-alpha.2 Phase 6 code quality & performance optimization)*

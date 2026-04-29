@@ -46,6 +46,32 @@ async function main() {
   // Health check
   fastify.get('/health', async () => ({ status: 'ok' }));
 
+  // Global error handler — structured error format, hide stack traces
+  fastify.setErrorHandler((error: Error & { statusCode?: number }, _request, reply) => {
+    const statusCode = error.statusCode ?? 500;
+    if (statusCode >= 500) {
+      fastify.log.error(error);
+    }
+    return reply.code(statusCode).send({
+      error: {
+        code: statusCode === 500 ? 'INTERNAL_001' : `HTTP_${statusCode}`,
+        message: statusCode === 500 ? '服务器内部错误' : error.message,
+        detail: statusCode === 500 ? 'Internal server error' : error.message,
+      },
+    });
+  });
+
+  // 404 handler — structured error format
+  fastify.setNotFoundHandler((_request, reply) => {
+    return reply.code(404).send({
+      error: {
+        code: 'HTTP_404',
+        message: '请求的资源不存在',
+        detail: 'Route not found',
+      },
+    });
+  });
+
   // Start server
   await fastify.listen({ port: config.PORT, host: config.HOST });
   console.log(`[Server] Listening on ${config.HOST}:${config.PORT}`);
@@ -68,18 +94,12 @@ main().catch((err) => {
 });
 
 // Graceful shutdown
-process.on('SIGINT', async () => {
-  console.log('\n[Server] Shutting down...');
+async function shutdown(signal: string) {
+  console.log(`\n[Server] ${signal} received, shutting down...`);
   stopScheduler();
   await fastify.close();
   closeDb();
   process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-  console.log('\n[Server] Shutting down...');
-  stopScheduler();
-  await fastify.close();
-  closeDb();
-  process.exit(0);
-});
+}
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));

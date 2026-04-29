@@ -1,12 +1,27 @@
+/**
+ * 搜索路由
+ * 提供音乐搜索功能，支持歌曲、歌手、专辑搜索
+ */
 import type { FastifyInstance } from 'fastify';
 import { getDb } from '../db/client.js';
 import type { TrackRow } from '../types/index.js';
 import { SEARCH_001, sendError } from '../types/errors.js';
 
+/**
+ * 注册搜索路由
+ * @param fastify Fastify 实例
+ */
 export default async function searchRoutes(fastify: FastifyInstance) {
+  /**
+   * 搜索接口
+   * GET /search
+   * 
+   * 需要认证，支持搜索歌曲、歌手和专辑
+   */
   fastify.get('/search', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const { q, limit = 20 } = request.query as { q?: string; limit?: number };
 
+    // 参数验证
     if (!q || q.trim().length === 0 || q.length > 100) {
       return sendError(reply, SEARCH_001);
     }
@@ -15,7 +30,7 @@ export default async function searchRoutes(fastify: FastifyInstance) {
     const safeLimit = Math.min(Math.max(1, limit), 50);
     const keyword = q.trim();
 
-    // Search tracks using FTS5
+    // 使用 FTS5 搜索歌曲
     const tracks = db.prepare(`
       SELECT t.*, highlight(tracks_fts, 0, '<em>', '</em>') as title_hl,
              highlight(tracks_fts, 1, '<em>', '</em>') as artist_hl,
@@ -24,9 +39,9 @@ export default async function searchRoutes(fastify: FastifyInstance) {
       JOIN tracks t ON t.id = tracks_fts.rowid
       WHERE tracks_fts MATCH ?
       LIMIT ?
-    `).all(`${keyword}*`, safeLimit) as (TrackRow & { title_hl: string; artist_hl: string; album_hl: string })[];
+    `).all(`"${keyword.replace(/"/g, '""')}"*`, safeLimit) as (TrackRow & { title_hl: string; artist_hl: string; album_hl: string })[];
 
-    // Search artists
+    // 搜索歌手
     const artists = db.prepare(`
       SELECT artist, COUNT(*) as trackCount
       FROM tracks
@@ -35,7 +50,7 @@ export default async function searchRoutes(fastify: FastifyInstance) {
       LIMIT ?
     `).all(`%${keyword}%`, safeLimit) as { artist: string; trackCount: number }[];
 
-    // Search albums
+    // 搜索专辑
     const albums = db.prepare(`
       SELECT album, artist, COUNT(*) as trackCount
       FROM tracks
@@ -79,6 +94,11 @@ export default async function searchRoutes(fastify: FastifyInstance) {
   });
 }
 
+/**
+ * 转义正则表达式特殊字符
+ * @param str 输入字符串
+ * @returns 转义后的字符串
+ */
 function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

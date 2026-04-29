@@ -11,10 +11,12 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import api from '../services/api';
-import { usePlayer } from '../hooks/usePlayer';
+import { usePlayerActions } from '../hooks/usePlayer';
+import { usePlayerStore } from '../store';
 import MiniPlayer from '../components/MiniPlayer';
 import type { RootStackParamList, TrackListItem } from '../types';
 import CoverImage from '../components/CoverImage';
+import { formatDuration } from '../utils/format';
 
 type RouteProps = RouteProp<RootStackParamList, 'Folder'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -23,7 +25,9 @@ export default function FolderScreen() {
   const route = useRoute<RouteProps>();
   const navigation = useNavigation<NavigationProp>();
   const { folderId, folderName } = route.params;
-  const { playTracks, currentTrack, isPlaying } = usePlayer();
+  const { playTracks } = usePlayerActions();
+  const currentTrack = usePlayerStore((s) => (s.currentIndex >= 0 ? s.queue[s.currentIndex] : null));
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
 
   const [tracks, setTracks] = useState<TrackListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,10 +35,11 @@ export default function FolderScreen() {
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({ total: 0, limit: 50, offset: 0 });
 
-  const fetchTracks = useCallback(async (offset = 0) => {
+  const fetchTracks = useCallback(async (offset = 0, signal?: AbortSignal) => {
     try {
       const response = await api.get(`/library/folders/${folderId}/tracks`, {
         params: { limit: 50, offset, sort: 'title', order: 'asc' },
+        signal,
       });
       if (offset === 0) {
         setTracks(response.data.data);
@@ -43,8 +48,10 @@ export default function FolderScreen() {
       }
       setPagination(response.data.pagination);
       setError(null);
-    } catch (err) {
-      setError('无法加载曲目');
+    } catch (err: any) {
+      if (err?.code !== 'ERR_CANCELED') {
+        setError('无法加载曲目');
+      }
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -52,7 +59,9 @@ export default function FolderScreen() {
   }, [folderId]);
 
   useEffect(() => {
-    fetchTracks();
+    const controller = new AbortController();
+    fetchTracks(0, controller.signal);
+    return () => { controller.abort(); };
   }, [fetchTracks]);
 
   const handleRefresh = () => {
@@ -82,13 +91,6 @@ export default function FolderScreen() {
       const shuffled = [...tracks].sort(() => Math.random() - 0.5);
       playTracks(shuffled, 0);
     }
-  };
-
-  const formatDuration = (seconds: number | null) => {
-    if (!seconds) return '--:--';
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   if (isLoading) {

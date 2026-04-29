@@ -7,13 +7,18 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import { usePlayer } from '../hooks/usePlayer';
+import { usePlayerActions } from '../hooks/usePlayer';
+import { usePlayerStore } from '../store';
 import { getCoverUrl } from '../services/player';
 import FastImage from 'react-native-fast-image';
+import { formatDuration, getModeIcon } from '../utils/format';
 import type { TrackListItem } from '../types';
 
 export default function QueueScreen() {
-  const { queue, currentIndex, playTracks, mode, toggleMode } = usePlayer();
+  const { playTracks, toggleMode } = usePlayerActions();
+  const queue = usePlayerStore((s) => s.queue);
+  const currentIndex = usePlayerStore((s) => s.currentIndex);
+  const mode = usePlayerStore((s) => s.mode);
   const [editMode, setEditMode] = useState(false);
 
   const handleTrackPress = (index: number) => {
@@ -70,24 +75,6 @@ export default function QueueScreen() {
     playTracks(newQueue, newCurrentIndex);
   };
 
-  const formatDuration = (seconds: number | null) => {
-    if (!seconds) return '--:--';
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const getModeIcon = () => {
-    switch (mode) {
-      case 'shuffle':
-        return '🔀';
-      case 'repeat':
-        return '🔁';
-      default:
-        return '➡️';
-    }
-  };
-
   return (
     <View style={styles.container}>
       {/* Header actions */}
@@ -100,7 +87,7 @@ export default function QueueScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.headerButton} onPress={toggleMode}>
-          <Text style={styles.modeIcon}>{getModeIcon()}</Text>
+          <Text style={styles.modeIcon}>{getModeIcon(mode)}</Text>
         </TouchableOpacity>
       </View>
 

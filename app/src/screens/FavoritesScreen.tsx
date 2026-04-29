@@ -8,25 +8,28 @@ import {
   RefreshControl,
 } from 'react-native';
 import api from '../services/api';
-import { usePlayer } from '../hooks/usePlayer';
+import { usePlayerActions } from '../hooks/usePlayer';
 import MiniPlayer from '../components/MiniPlayer';
 import CoverImage from '../components/CoverImage';
+import { formatDuration, formatRelativeTime } from '../utils/format';
 import type { FavoriteTrack } from '../types';
 
 export default function FavoritesScreen() {
-  const { playTracks } = usePlayer();
+  const { playTracks } = usePlayerActions();
   const [favorites, setFavorites] = useState<FavoriteTrack[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchFavorites = useCallback(async () => {
+  const fetchFavorites = useCallback(async (signal?: AbortSignal) => {
     try {
-      const response = await api.get('/favorites', { params: { limit: 100 } });
+      const response = await api.get('/favorites', { params: { limit: 100 }, signal });
       setFavorites(response.data.data);
       setError(null);
-    } catch (err) {
-      setError('无法加载收藏列表');
+    } catch (err: any) {
+      if (err?.code !== 'ERR_CANCELED') {
+        setError('无法加载收藏列表');
+      }
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -34,7 +37,9 @@ export default function FavoritesScreen() {
   }, []);
 
   useEffect(() => {
-    fetchFavorites();
+    const controller = new AbortController();
+    fetchFavorites(controller.signal);
+    return () => { controller.abort(); };
   }, [fetchFavorites]);
 
   const handleRefresh = () => {
@@ -52,25 +57,6 @@ export default function FavoritesScreen() {
     playTracks(tracks, index >= 0 ? index : 0);
   };
 
-  const formatDuration = (seconds: number | null) => {
-    if (!seconds) return '--:--';
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const formatTime = (timestamp: number) => {
-    const date = new Date(timestamp * 1000);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-    if (days === 0) return '今天';
-    if (days === 1) return '昨天';
-    if (days < 7) return `${days} 天前`;
-    return date.toLocaleDateString();
-  };
-
   if (isLoading) {
     return (
       <View style={styles.center}>
@@ -83,7 +69,7 @@ export default function FavoritesScreen() {
     return (
       <View style={styles.center}>
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchFavorites}>
+        <TouchableOpacity style={styles.retryButton} onPress={() => fetchFavorites()}>
           <Text style={styles.retryText}>重试</Text>
         </TouchableOpacity>
       </View>
@@ -113,7 +99,7 @@ export default function FavoritesScreen() {
               <Text style={styles.trackDuration}>
                 {formatDuration(item.duration)}
               </Text>
-              <Text style={styles.favoritedAt}>{formatTime(item.favoritedAt)}</Text>
+              <Text style={styles.favoritedAt}>{formatRelativeTime(item.favoritedAt)}</Text>
             </View>
           </TouchableOpacity>
         )}

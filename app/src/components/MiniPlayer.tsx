@@ -7,7 +7,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { usePlayer } from '../hooks/usePlayer';
+import { usePlayerStore } from '../store';
 import CoverImage from './CoverImage';
 import type { RootStackParamList } from '../types';
 
@@ -20,7 +20,10 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export default function MiniPlayer() {
   const navigation = useNavigation<NavigationProp>();
   // 获取播放器状态和操作方法
-  const { currentTrack, isPlaying, play, pause } = usePlayer();
+  const currentTrack = usePlayerStore((s) => (s.currentIndex >= 0 ? s.queue[s.currentIndex] : null));
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const play = usePlayerStore((s) => s.play);
+  const pause = usePlayerStore((s) => s.pause);
 
   // 如果没有当前播放歌曲，不显示
   if (!currentTrack) return null;

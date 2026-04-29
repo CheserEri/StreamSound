@@ -57,9 +57,13 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Retry on network error (no response) or 5xx
+    // Only retry idempotent methods (GET, HEAD, OPTIONS)
+    const method = (config.method || 'get').toUpperCase();
+    const isIdempotent = method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
+
+    // Retry on network error (no response) or 5xx, but only for idempotent requests
     const shouldRetry =
-      !error.response || (error.response.status >= 500 && error.response.status < 600);
+      isIdempotent && (!error.response || (error.response.status >= 500 && error.response.status < 600));
 
     if (!shouldRetry) {
       return Promise.reject(error);

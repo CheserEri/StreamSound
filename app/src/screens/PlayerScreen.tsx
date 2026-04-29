@@ -16,6 +16,7 @@ import type { RootStackParamList, TrackDetail } from '../types';
 import Slider from '@react-native-community/slider';
 import CoverImage from '../components/CoverImage';
 import LyricsView from '../components/LyricsView';
+import { formatProgress, getModeIcon, getModeLabel } from '../utils/format';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const COVER_SIZE = SCREEN_WIDTH * 0.45;
@@ -62,44 +63,22 @@ export default function PlayerScreen() {
       setTrackDetail(null);
     }
 
-    // Fetch fresh data from API
-    api.get(`/library/tracks/${currentTrack.id}`).then((res) => {
-      setTrackDetail(res.data.data);
-      if (res.data.data.lyrics) {
-        setCachedLyrics(currentTrack.id, res.data.data.lyrics);
-      }
-    }).catch(() => {
-      // Network error — keep cached lyrics if available
-    });
+    // Fetch fresh data from API with AbortController to prevent race conditions
+    const controller = new AbortController();
+    api.get(`/library/tracks/${currentTrack.id}`, { signal: controller.signal })
+      .then((res) => {
+        setTrackDetail(res.data.data);
+        if (res.data.data.lyrics) {
+          setCachedLyrics(currentTrack.id, res.data.data.lyrics);
+        }
+      })
+      .catch(() => {
+        // Network error or cancelled — keep cached lyrics if available
+      });
+
+    return () => { controller.abort(); };
   }, [currentTrack?.id]);
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const getModeIcon = () => {
-    switch (mode) {
-      case 'shuffle':
-        return '🔀';
-      case 'repeat':
-        return '🔁';
-      default:
-        return '➡️';
-    }
-  };
-
-  const getModeLabel = () => {
-    switch (mode) {
-      case 'shuffle':
-        return '随机播放';
-      case 'repeat':
-        return '单曲循环';
-      default:
-        return '顺序播放';
-    }
-  };
 
   if (!currentTrack) {
     return (
@@ -175,16 +154,16 @@ export default function PlayerScreen() {
           thumbTintColor="#fff"
         />
         <View style={styles.timeRow}>
-          <Text style={styles.timeText}>{formatTime(progress)}</Text>
-          <Text style={styles.timeText}>{formatTime(duration)}</Text>
+          <Text style={styles.timeText}>{formatProgress(progress)}</Text>
+          <Text style={styles.timeText}>{formatProgress(duration)}</Text>
         </View>
       </View>
 
       {/* Controls */}
       <View style={styles.controls}>
         <TouchableOpacity onPress={toggleMode} style={styles.modeButton}>
-          <Text style={styles.modeIcon}>{getModeIcon()}</Text>
-          <Text style={styles.modeLabel}>{getModeLabel()}</Text>
+          <Text style={styles.modeIcon}>{getModeIcon(mode)}</Text>
+          <Text style={styles.modeLabel}>{getModeLabel(mode)}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={skipToPrevious} style={styles.controlButton}>

@@ -8,25 +8,28 @@ import {
   RefreshControl,
 } from 'react-native';
 import api from '../services/api';
-import { usePlayer } from '../hooks/usePlayer';
+import { usePlayerActions } from '../hooks/usePlayer';
 import MiniPlayer from '../components/MiniPlayer';
 import CoverImage from '../components/CoverImage';
+import { formatDuration, formatRelativeTime } from '../utils/format';
 import type { HistoryTrack } from '../types';
 
 export default function HistoryScreen() {
-  const { playTracks } = usePlayer();
+  const { playTracks } = usePlayerActions();
   const [history, setHistory] = useState<HistoryTrack[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchHistory = useCallback(async () => {
+  const fetchHistory = useCallback(async (signal?: AbortSignal) => {
     try {
-      const response = await api.get('/history', { params: { limit: 50 } });
+      const response = await api.get('/history', { params: { limit: 50 }, signal });
       setHistory(response.data.data);
       setError(null);
-    } catch (err) {
-      setError('无法加载播放历史');
+    } catch (err: any) {
+      if (err?.code !== 'ERR_CANCELED') {
+        setError('无法加载播放历史');
+      }
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -34,7 +37,9 @@ export default function HistoryScreen() {
   }, []);
 
   useEffect(() => {
-    fetchHistory();
+    const controller = new AbortController();
+    fetchHistory(controller.signal);
+    return () => { controller.abort(); };
   }, [fetchHistory]);
 
   const handleRefresh = () => {
@@ -52,28 +57,6 @@ export default function HistoryScreen() {
     playTracks(tracks, index >= 0 ? index : 0);
   };
 
-  const formatDuration = (seconds: number | null) => {
-    if (!seconds) return '--:--';
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const formatTime = (timestamp: number) => {
-    const date = new Date(timestamp * 1000);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-    if (minutes < 1) return '刚刚';
-    if (minutes < 60) return `${minutes} 分钟前`;
-    if (hours < 24) return `${hours} 小时前`;
-    if (days < 7) return `${days} 天前`;
-    return date.toLocaleDateString();
-  };
-
   if (isLoading) {
     return (
       <View style={styles.center}>
@@ -86,7 +69,7 @@ export default function HistoryScreen() {
     return (
       <View style={styles.center}>
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchHistory}>
+        <TouchableOpacity style={styles.retryButton} onPress={() => fetchHistory()}>
           <Text style={styles.retryText}>重试</Text>
         </TouchableOpacity>
       </View>
@@ -116,7 +99,7 @@ export default function HistoryScreen() {
               <Text style={styles.trackDuration}>
                 {formatDuration(item.duration)}
               </Text>
-              <Text style={styles.playedAt}>{formatTime(item.playedAt)}</Text>
+              <Text style={styles.playedAt}>{formatRelativeTime(item.playedAt)}</Text>
             </View>
           </TouchableOpacity>
         )}
