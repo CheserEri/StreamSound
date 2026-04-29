@@ -2,6 +2,13 @@
 
 All notable changes to StreamSound are documented in this file.
 
+## [0.2.0-alpha.4] - 2026-04-30
+
+### Fixed
+- 修复播放进度条无法正确显示歌曲时长的问题：流式音频场景下 RNTP 延迟报告 duration，改用元数据时长作为兜底
+- 修复 `formatProgress` 在传入 `NaN`/`Infinity`/负数时显示异常的问题
+- 修复 Slider `maximumValue` 在 duration 为 0 时退化为 1 的问题，增加歌曲元数据时长兜底
+
 ## [0.2.0-alpha.3] - 2026-04-30
 
 ### Fixed

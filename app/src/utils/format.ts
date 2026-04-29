@@ -16,6 +16,7 @@ export function formatDuration(seconds: number | null | undefined): string {
  * 格式化播放进度时长（秒 -> m:ss，用于进度条显示）
  */
 export function formatProgress(seconds: number): string {
+  if (!seconds || !isFinite(seconds) || seconds < 0) return '0:00';
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
