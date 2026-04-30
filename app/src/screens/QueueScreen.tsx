@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePlayerActions } from '../hooks/usePlayer';
 import { usePlayerStore, useSettingsStore } from '../store';
 import { getColors } from '../theme/colors';
@@ -15,7 +14,6 @@ export default function QueueScreen() {
   const queue = usePlayerStore((s) => s.queue);
   const currentIndex = usePlayerStore((s) => s.currentIndex);
   const mode = usePlayerStore((s) => s.mode);
-  const insets = useSafeAreaInsets();
   const theme = useSettingsStore((s) => s.theme);
   const colors = useMemo(() => getColors(theme), [theme]);
   const [editMode, setEditMode] = useState(false);
@@ -109,7 +107,7 @@ export default function QueueScreen() {
             </TouchableOpacity>
           );
         }}
-        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom }]}
+        contentContainerStyle={styles.list}
       />
     </View>
   );

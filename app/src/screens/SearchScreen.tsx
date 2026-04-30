@@ -8,7 +8,6 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSettingsStore } from '../store';
 import { getColors } from '../theme/colors';
 import { useSearch } from '../hooks/useSearch';
@@ -26,7 +25,6 @@ interface Section {
 export default function SearchScreen() {
   const { query, result, isLoading, error, search } = useSearch();
   const { playTracks } = usePlayerActions();
-  const insets = useSafeAreaInsets();
   const theme = useSettingsStore((s) => s.theme);
   const colors = useMemo(() => getColors(theme), [theme]);
 
@@ -123,7 +121,7 @@ export default function SearchScreen() {
           renderItem={renderItem}
           renderSectionHeader={({ section }) => <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{section.title}</Text>}
           stickySectionHeadersEnabled={false}
-          contentContainerStyle={[styles.list, { paddingBottom: 76 + insets.bottom }]}
+          contentContainerStyle={[styles.list, { paddingBottom: 76 }]}
         />
       ) : query.length > 0 ? (
         <View style={styles.center}><Text style={{ color: colors.textSecondary, fontSize: 14 }}>未找到相关结果</Text></View>

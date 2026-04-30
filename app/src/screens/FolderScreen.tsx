@@ -10,7 +10,6 @@ import {
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSettingsStore, usePlayerStore } from '../store';
 import { getColors } from '../theme/colors';
 import api from '../services/api';
@@ -28,7 +27,6 @@ export default function FolderScreen() {
   const route = useRoute<RouteProps>();
   const navigation = useNavigation<NavigationProp>();
   const { folderId } = route.params;
-  const insets = useSafeAreaInsets();
   const theme = useSettingsStore((s) => s.theme);
   const colors = useMemo(() => getColors(theme), [theme]);
   const { playTracks } = usePlayerActions();
@@ -131,7 +129,7 @@ export default function FolderScreen() {
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.textSecondary} />}
-        contentContainerStyle={[styles.list, { paddingBottom: 76 + insets.bottom }]}
+        contentContainerStyle={[styles.list, { paddingBottom: 76 }]}
       />
       <MiniPlayer />
     </View>

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, Alert, RefreshControl } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSettingsStore } from '../store';
 import { getColors } from '../theme/colors';
 import api from '../services/api';
@@ -9,7 +8,6 @@ interface AdminUser { id: number; username: string; role: 'user' | 'admin'; appr
 interface ScanState { status: 'idle' | 'running'; scanned: number; added: number; updated: number; removed: number; startedAt: number | null; finishedAt: number | null; error: string | null; }
 
 export default function AdminScreen() {
-  const insets = useSafeAreaInsets();
   const theme = useSettingsStore((s) => s.theme);
   const colors = useMemo(() => getColors(theme), [theme]);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -113,7 +111,7 @@ export default function AdminScreen() {
         )}
         ListHeaderComponent={<>{renderScanSection()}<View style={styles.section}><Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>用户管理</Text></View></>}
         ListEmptyComponent={isLoadingUsers ? <View style={styles.center}><ActivityIndicator color={colors.textSecondary} /></View> : <View style={styles.center}><Text style={{ color: colors.textMuted }}>暂无用户</Text></View>}
-        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom }]}
+        contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.textSecondary} />}
       />
     </View>
