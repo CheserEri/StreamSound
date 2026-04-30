@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,9 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSettingsStore } from '../store';
+import { getColors } from '../theme/colors';
 import api from '../services/api';
 import MiniPlayer from '../components/MiniPlayer';
 import {
@@ -17,7 +20,6 @@ import {
   ClockIcon,
   SettingsIcon,
   FolderIcon,
-  MusicNoteIcon,
 } from '../components/icons';
 import type { RootStackParamList, Folder } from '../types';
 
@@ -25,6 +27,9 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Library'>;
 
 export default function LibraryScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const insets = useSafeAreaInsets();
+  const theme = useSettingsStore((s) => s.theme);
+  const colors = useMemo(() => getColors(theme), [theme]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -43,50 +48,22 @@ export default function LibraryScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchFolders();
-  }, [fetchFolders]);
+  useEffect(() => { fetchFolders(); }, [fetchFolders]);
 
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    fetchFolders();
-  };
-
-  const handleFolderPress = (folder: Folder) => {
-    navigation.navigate('Folder', {
-      folderId: folder.id,
-      folderName: folder.name,
-    });
-  };
-
-  const handleSearchPress = () => {
-    navigation.navigate('Search');
-  };
-
-  const handleFavoritesPress = () => {
-    navigation.navigate('Favorites');
-  };
-
-  const handleHistoryPress = () => {
-    navigation.navigate('History');
-  };
-
-  const handleSettingsPress = () => {
-    navigation.navigate('Settings');
-  };
+  const handleRefresh = () => { setIsRefreshing(true); fetchFolders(); };
 
   if (isLoading) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.loadingText}>加载中...</Text>
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <Text style={{ color: colors.textSecondary, fontSize: 16 }}>加载中...</Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.errorText}>{error}</Text>
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <Text style={{ color: '#ff4444', fontSize: 16, marginBottom: 16 }}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={fetchFolders}>
           <Text style={styles.retryText}>重试</Text>
         </TouchableOpacity>
@@ -95,32 +72,32 @@ export default function LibraryScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Quick actions */}
-      <View style={styles.quickActions}>
-        <TouchableOpacity style={styles.actionButton} onPress={handleSearchPress}>
-          <View style={styles.actionIconCircle}>
+      <View style={[styles.quickActions, { borderBottomColor: colors.border }]}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Search')}>
+          <View style={[styles.actionIconCircle, { backgroundColor: colors.accent }]}>
             <SearchIcon size={20} color="#fff" />
           </View>
-          <Text style={styles.actionText}>搜索</Text>
+          <Text style={[styles.actionText, { color: colors.textSecondary }]}>搜索</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={handleFavoritesPress}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Favorites')}>
           <View style={[styles.actionIconCircle, { backgroundColor: '#e74c3c' }]}>
             <HeartFilledIcon size={20} color="#fff" />
           </View>
-          <Text style={styles.actionText}>收藏</Text>
+          <Text style={[styles.actionText, { color: colors.textSecondary }]}>收藏</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={handleHistoryPress}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('History')}>
           <View style={[styles.actionIconCircle, { backgroundColor: '#3498db' }]}>
             <ClockIcon size={20} color="#fff" />
           </View>
-          <Text style={styles.actionText}>最近</Text>
+          <Text style={[styles.actionText, { color: colors.textSecondary }]}>最近</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={handleSettingsPress}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Settings')}>
           <View style={[styles.actionIconCircle, { backgroundColor: '#666' }]}>
             <SettingsIcon size={20} color="#fff" />
           </View>
-          <Text style={styles.actionText}>设置</Text>
+          <Text style={[styles.actionText, { color: colors.textSecondary }]}>设置</Text>
         </TouchableOpacity>
       </View>
 
@@ -130,127 +107,46 @@ export default function LibraryScreen() {
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={styles.folderItem}
-            onPress={() => handleFolderPress(item)}
+            style={[styles.folderItem, { borderBottomColor: colors.border }]}
+            onPress={() => navigation.navigate('Folder', { folderId: item.id, folderName: item.name })}
           >
-            <View style={styles.folderIcon}>
-              <FolderIcon size={22} color="#666" />
+            <View style={[styles.folderIcon, { backgroundColor: colors.surface }]}>
+              <FolderIcon size={22} color={colors.textSecondary} />
             </View>
             <View style={styles.folderInfo}>
-              <Text style={styles.folderName} numberOfLines={1}>
+              <Text style={[styles.folderName, { color: colors.text }]} numberOfLines={1}>
                 {item.name}
               </Text>
-              <Text style={styles.folderCount}>{item.trackCount} 首</Text>
+              <Text style={[styles.folderCount, { color: colors.textSecondary }]}>{item.trackCount} 首</Text>
             </View>
-            <Text style={styles.arrow}>›</Text>
+            <Text style={[styles.arrow, { color: colors.textMuted }]}>›</Text>
           </TouchableOpacity>
         )}
         refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            tintColor="#fff"
-          />
+          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.textSecondary} />
         }
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingBottom: 76 + insets.bottom }]}
       />
 
-      {/* Mini Player */}
       <MiniPlayer />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#121212',
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#121212',
-  },
-  loadingText: {
-    color: '#888',
-    fontSize: 16,
-  },
-  errorText: {
-    color: '#ff4444',
-    fontSize: 16,
-    marginBottom: 16,
-  },
-  retryButton: {
-    backgroundColor: '#2563eb',
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  retryText: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  quickActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#222',
-  },
-  actionButton: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  actionIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#1db954',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  actionText: {
-    color: '#ccc',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  list: {
-    paddingVertical: 8,
-  },
-  folderItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#222',
-  },
-  folderIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#1e1e1e',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  folderInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  folderName: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  folderCount: {
-    color: '#888',
-    fontSize: 13,
-    marginTop: 2,
-  },
-  arrow: {
-    color: '#666',
-    fontSize: 20,
-  },
+  container: { flex: 1 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  retryButton: { backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
+  retryText: { color: '#fff', fontSize: 14 },
+  quickActions: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 20, paddingHorizontal: 16, borderBottomWidth: 1 },
+  actionButton: { alignItems: 'center', gap: 8 },
+  actionIconCircle: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+  actionText: { fontSize: 12, fontWeight: '500' },
+  list: { paddingVertical: 8 },
+  folderItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth },
+  folderIcon: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  folderInfo: { flex: 1, marginLeft: 12 },
+  folderName: { fontSize: 16, fontWeight: '500' },
+  folderCount: { fontSize: 13, marginTop: 2 },
+  arrow: { fontSize: 20 },
 });

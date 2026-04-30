@@ -1,41 +1,24 @@
 /**
  * 播放器后台服务
  * 处理来自通知栏/锁屏/耳机的远程控制事件
- * react-native-track-player 要求在 index.js 中注册此服务
- *
- * 注意: 必须使用 module.exports (CommonJS)，因为 index.js 通过 require() 加载
+ * 通过 Zustand store 转发，以正确处理播放模式（随机/单曲循环等）
  */
 import TrackPlayer, { Event } from 'react-native-track-player';
 
-module.exports = async function () {
-  // 监听远程播放
-  TrackPlayer.addEventListener(Event.RemotePlay, () => TrackPlayer.play());
+export default async function () {
+  // 延迟导入避免循环依赖
+  const { usePlayerStore } = await import('../store');
+  const store = usePlayerStore.getState();
 
-  // 监听远程暂停
-  TrackPlayer.addEventListener(Event.RemotePause, () => TrackPlayer.pause());
-
-  // 监听远程停止
+  TrackPlayer.addEventListener(Event.RemotePlay, () => store.play());
+  TrackPlayer.addEventListener(Event.RemotePause, () => store.pause());
   TrackPlayer.addEventListener(Event.RemoteStop, () => TrackPlayer.stop());
-
-  // 监听远程下一曲
-  TrackPlayer.addEventListener(Event.RemoteNext, () => TrackPlayer.skipToNext());
-
-  // 监听远程上一曲
-  TrackPlayer.addEventListener(Event.RemotePrevious, () => TrackPlayer.skipToPrevious());
-
-  // 监听远程 seek
-  TrackPlayer.addEventListener(Event.RemoteSeek, (event) => {
-    TrackPlayer.seekTo(event.position);
-  });
-
-  // 音频焦点变化 (其他 App 播放声音时暂停/恢复)
+  TrackPlayer.addEventListener(Event.RemoteNext, () => store.skipToNext());
+  TrackPlayer.addEventListener(Event.RemotePrevious, () => store.skipToPrevious());
+  TrackPlayer.addEventListener(Event.RemoteSeek, (event) => store.seekTo(event.position));
   TrackPlayer.addEventListener(Event.RemoteDuck, (event) => {
-    if (event.paused) {
-      TrackPlayer.pause();
-    } else if (event.permanent) {
-      TrackPlayer.stop();
-    } else {
-      TrackPlayer.play();
-    }
+    if (event.paused) store.pause();
+    else if (event.permanent) TrackPlayer.stop();
+    else store.play();
   });
-};
+}
