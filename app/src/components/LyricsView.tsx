@@ -105,7 +105,7 @@ export default function LyricsView({
   if (!lyrics || parsedLyrics.length === 0) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyIcon}>♫</Text>
+        <Text style={styles.emptyIcon}>♪</Text>
         <Text style={styles.emptyText}>暂无歌词</Text>
         <Text style={styles.emptyHint}>请确保音频文件包含歌词或同目录下有 .lrc 文件</Text>
       </View>

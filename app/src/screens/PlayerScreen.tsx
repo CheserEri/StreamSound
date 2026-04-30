@@ -1,29 +1,58 @@
-import React, { useEffect, useState } from 'react';
+/**
+ * 播放器主屏幕 - 网易云音乐风格
+ *
+ * 布局:
+ *  - 顶部: 折叠按钮 + 标题 + 播放列表按钮
+ *  - 中间: 水平滑动页面 (左侧=专辑页, 右侧=歌词页)
+ *  - 底部: 歌曲信息 + 进度条 + 控制按钮
+ *
+ * 左右滑动切换专辑/歌词，参考网易云音乐逻辑
+ */
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { usePlayer } from '../hooks/usePlayer';
 import { useSettingsStore } from '../store';
 import api from '../services/api';
 import { getCachedLyrics, setCachedLyrics } from '../services/storage';
 import type { RootStackParamList, TrackDetail } from '../types';
-import Slider from '@react-native-community/slider';
 import CoverImage from '../components/CoverImage';
 import LyricsView from '../components/LyricsView';
-import { formatProgress, getModeIcon, getModeLabel } from '../utils/format';
+import DiscCover from '../components/DiscCover';
+import AnimatedPlayButton from '../components/AnimatedPlayButton';
+import AnimatedHeartButton from '../components/AnimatedHeartButton';
+import GlowSlider from '../components/GlowSlider';
+import GradientBackground from '../components/GradientBackground';
+import {
+  ChevronDownIcon,
+  QueueIcon,
+  SkipPreviousIcon,
+  SkipNextIcon,
+  ShuffleIcon,
+  RepeatIcon,
+  RepeatOneIcon,
+} from '../components/icons';
+import { formatProgress } from '../utils/format';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const COVER_SIZE = SCREEN_WIDTH * 0.45;
+const COVER_SIZE = SCREEN_WIDTH * 0.68;
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Player'>;
 
 export default function PlayerScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const insets = useSafeAreaInsets();
+  const scrollViewRef = useRef<ScrollView>(null);
   const {
     currentTrack,
     isPlaying,
@@ -40,6 +69,7 @@ export default function PlayerScreen() {
   const { lyricsSize } = useSettingsStore();
 
   const [trackDetail, setTrackDetail] = useState<TrackDetail | null>(null);
+  const [currentPage, setCurrentPage] = useState(0); // 0=album, 1=lyrics
 
   useEffect(() => {
     if (!currentTrack) {
@@ -63,7 +93,7 @@ export default function PlayerScreen() {
       setTrackDetail(null);
     }
 
-    // Fetch fresh data from API with AbortController to prevent race conditions
+    // Fetch fresh data from API
     const controller = new AbortController();
     api.get(`/library/tracks/${currentTrack.id}`, { signal: controller.signal })
       .then((res) => {
@@ -72,125 +102,197 @@ export default function PlayerScreen() {
           setCachedLyrics(currentTrack.id, res.data.data.lyrics);
         }
       })
-      .catch(() => {
-        // Network error or cancelled — keep cached lyrics if available
-      });
+      .catch(() => {});
 
     return () => { controller.abort(); };
   }, [currentTrack?.id]);
 
+  /**
+   * 处理水平滚动，判断当前页面
+   */
+  const handleScroll = useCallback((event: any) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const page = Math.round(offsetX / SCREEN_WIDTH);
+    setCurrentPage(page);
+  }, []);
+
+  /**
+   * 跳转到指定页面
+   */
+  const scrollToPage = useCallback((page: number) => {
+    scrollViewRef.current?.scrollTo({
+      x: page * SCREEN_WIDTH,
+      animated: true,
+    });
+    setCurrentPage(page);
+  }, []);
 
   if (!currentTrack) {
     return (
-      <View style={styles.container}>
+      <GradientBackground>
         <View style={styles.center}>
           <Text style={styles.noTrackText}>未在播放</Text>
         </View>
-      </View>
+      </GradientBackground>
     );
   }
 
+  const getModeIconComponent = () => {
+    switch (mode) {
+      case 'shuffle': return <ShuffleIcon size={20} color="#aaa" />;
+      case 'repeat-one': return <RepeatOneIcon size={20} color="#1db954" />;
+      case 'repeat': return <RepeatIcon size={20} color="#1db954" />;
+      default: return <RepeatIcon size={20} color="#aaa" />;
+    }
+  };
+
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
-          <Text style={styles.closeButton}>▼</Text>
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>正在播放</Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Queue')}
-          style={styles.headerButton}
-        >
-          <Text style={styles.queueButton}>📋</Text>
-        </TouchableOpacity>
-      </View>
+    <GestureHandlerRootView style={styles.flex}>
+      <GradientBackground colors={['#1a1a2e', '#121218', '#0a0a12']}>
+        {/* Header */}
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.headerButton}
+            hitSlop={12}
+          >
+            <ChevronDownIcon size={28} color="#fff" />
+          </TouchableOpacity>
 
-      {/* Main content: Cover + Lyrics */}
-      <View style={styles.mainContent}>
-        {/* Cover */}
-        <View style={styles.coverContainer}>
-          <CoverImage
-            trackId={currentTrack.id}
-            hasCover={currentTrack.hasCover}
-            size={COVER_SIZE}
-            borderRadius={12}
-            style={styles.cover}
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>正在播放</Text>
+          </View>
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Queue')}
+            style={styles.headerButton}
+            hitSlop={12}
+          >
+            <QueueIcon size={22} color="#fff" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Page indicator dots */}
+        <View style={styles.pageIndicator}>
+          <TouchableOpacity
+            onPress={() => scrollToPage(0)}
+            style={[styles.dot, currentPage === 0 && styles.dotActive]}
+          />
+          <TouchableOpacity
+            onPress={() => scrollToPage(1)}
+            style={[styles.dot, currentPage === 1 && styles.dotActive]}
           />
         </View>
 
-        {/* Lyrics area */}
-        <View style={styles.lyricsContainer}>
-          <LyricsView
-            lyrics={trackDetail?.lyrics || null}
-            size={lyricsSize}
-            onLinePress={(time) => seekTo(time)}
-          />
-        </View>
-      </View>
-
-      {/* Track info */}
-      <View style={styles.trackInfo}>
-        <Text style={styles.trackTitle} numberOfLines={1}>
-          {currentTrack.title}
-        </Text>
-        <Text style={styles.trackArtist} numberOfLines={1}>
-          {currentTrack.artist || '未知艺术家'}
-        </Text>
-      </View>
-
-      {/* Progress */}
-      <View style={styles.progressContainer}>
-        <Slider
-          style={styles.slider}
-          minimumValue={0}
-          maximumValue={duration || currentTrack.duration || 1}
-          value={progress}
-          onSlidingComplete={(value) => seekTo(value)}
-          minimumTrackTintColor="#fff"
-          maximumTrackTintColor="#333"
-          thumbTintColor="#fff"
-        />
-        <View style={styles.timeRow}>
-          <Text style={styles.timeText}>{formatProgress(progress)}</Text>
-          <Text style={styles.timeText}>{formatProgress(duration)}</Text>
-        </View>
-      </View>
-
-      {/* Controls */}
-      <View style={styles.controls}>
-        <TouchableOpacity onPress={toggleMode} style={styles.modeButton}>
-          <Text style={styles.modeIcon}>{getModeIcon(mode)}</Text>
-          <Text style={styles.modeLabel}>{getModeLabel(mode)}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={skipToPrevious} style={styles.controlButton}>
-          <Text style={styles.controlButtonText}>⏮</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={isPlaying ? pause : play}
-          style={styles.playButton}
+        {/* Horizontal pager: Album (left) + Lyrics (right) */}
+        <ScrollView
+          ref={scrollViewRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={handleScroll}
+          style={styles.pager}
         >
-          <Text style={styles.playButtonText}>{isPlaying ? '⏸' : '▶'}</Text>
-        </TouchableOpacity>
+          {/* Page 1: Album Cover */}
+          <View style={styles.page}>
+            <View style={styles.coverSection}>
+              <DiscCover
+                trackId={currentTrack.id}
+                hasCover={currentTrack.hasCover}
+                size={COVER_SIZE}
+                isPlaying={isPlaying}
+              />
+            </View>
+          </View>
 
-        <TouchableOpacity onPress={skipToNext} style={styles.controlButton}>
-          <Text style={styles.controlButtonText}>⏭</Text>
-        </TouchableOpacity>
+          {/* Page 2: Lyrics */}
+          <View style={styles.page}>
+            <View style={styles.lyricsSection}>
+              <LyricsView
+                lyrics={trackDetail?.lyrics || null}
+                size={lyricsSize}
+                onLinePress={(time) => seekTo(time)}
+              />
+            </View>
+          </View>
+        </ScrollView>
 
-        <View style={styles.modeButton} />
-      </View>
-    </View>
+        {/* Track info + Heart */}
+        <View style={styles.trackInfo}>
+          <View style={styles.trackInfoRow}>
+            <View style={styles.trackInfoText}>
+              <Text style={styles.trackTitle} numberOfLines={1}>
+                {currentTrack.title}
+              </Text>
+              <Text style={styles.trackArtist} numberOfLines={1}>
+                {currentTrack.artist || '未知艺术家'}
+              </Text>
+            </View>
+            <AnimatedHeartButton
+              trackId={currentTrack.id}
+              initialFavorited={trackDetail?.isFavorited ?? false}
+              size={26}
+            />
+          </View>
+        </View>
+
+        {/* Progress slider */}
+        <View style={styles.progressContainer}>
+          <GlowSlider
+            value={progress}
+            maximumValue={duration || currentTrack.duration || 1}
+            onSeek={seekTo}
+            activeColor="#fff"
+            inactiveColor="#333"
+          />
+          <View style={styles.timeRow}>
+            <Text style={styles.timeText}>{formatProgress(progress)}</Text>
+            <Text style={styles.timeText}>{formatProgress(duration || currentTrack.duration || 0)}</Text>
+          </View>
+        </View>
+
+        {/* Controls */}
+        <View style={[styles.controls, { paddingBottom: insets.bottom + 16 }]}>
+          <TouchableOpacity
+            onPress={toggleMode}
+            style={styles.modeButton}
+            hitSlop={8}
+          >
+            {getModeIconComponent()}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={skipToPrevious}
+            style={styles.controlButton}
+            hitSlop={8}
+          >
+            <SkipPreviousIcon size={32} color="#fff" />
+          </TouchableOpacity>
+
+          <AnimatedPlayButton
+            isPlaying={isPlaying}
+            onPress={isPlaying ? pause : play}
+            size={72}
+          />
+
+          <TouchableOpacity
+            onPress={skipToNext}
+            style={styles.controlButton}
+            hitSlop={8}
+          >
+            <SkipNextIcon size={32} color="#fff" />
+          </TouchableOpacity>
+
+          <View style={styles.modeButton} />
+        </View>
+      </GradientBackground>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  flex: {
     flex: 1,
-    backgroundColor: '#0a0a0a',
   },
   center: {
     flex: 1,
@@ -206,12 +308,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 56,
-    paddingBottom: 8,
+    paddingBottom: 4,
   },
   headerButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -219,118 +320,109 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
-  closeButton: {
-    color: '#fff',
-    fontSize: 18,
-  },
   headerTitle: {
     color: '#aaa',
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '600',
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 1.5,
   },
-  queueButton: {
-    fontSize: 18,
-  },
-  mainContent: {
-    flex: 1,
+  // Page indicator dots
+  pageIndicator: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-  },
-  coverContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    width: COVER_SIZE + 20,
+    paddingVertical: 8,
+    gap: 8,
   },
-  cover: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 8,
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#555',
   },
-  lyricsContainer: {
+  dotActive: {
+    width: 18,
+    backgroundColor: '#fff',
+  },
+  // Horizontal pager
+  pager: {
     flex: 1,
   },
-  trackInfo: {
+  page: {
+    width: SCREEN_WIDTH,
+    justifyContent: 'center',
     alignItems: 'center',
+  },
+  coverSection: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+  },
+  lyricsSection: {
+    flex: 1,
+    width: '100%',
+    paddingHorizontal: 24,
+  },
+  // Track info
+  trackInfo: {
     paddingHorizontal: 32,
     paddingVertical: 12,
   },
+  trackInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  trackInfoText: {
+    flex: 1,
+    marginRight: 12,
+  },
   trackTitle: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 4,
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   trackArtist: {
     color: '#888',
     fontSize: 14,
+    marginTop: 4,
+    fontWeight: '400',
   },
+  // Progress
   progressContainer: {
-    paddingHorizontal: 24,
-  },
-  slider: {
-    width: '100%',
-    height: 36,
+    paddingTop: 4,
   },
   timeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: -8,
+    paddingHorizontal: 32,
+    marginTop: 4,
   },
   timeText: {
     color: '#777',
     fontSize: 11,
     fontVariant: ['tabular-nums'],
   },
+  // Controls
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
-    paddingBottom: 48,
-    gap: 16,
+    gap: 20,
   },
   controlButton: {
-    width: 52,
-    height: 52,
+    width: 48,
+    height: 48,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  controlButtonText: {
-    fontSize: 28,
-    color: '#fff',
-  },
-  playButton: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#fff',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  playButtonText: {
-    fontSize: 30,
   },
   modeButton: {
-    width: 52,
-    height: 52,
+    width: 44,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  modeIcon: {
-    fontSize: 18,
-  },
-  modeLabel: {
-    color: '#666',
-    fontSize: 9,
-    marginTop: 2,
   },
 });

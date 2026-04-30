@@ -4,6 +4,7 @@
  */
 import React, { useState, useMemo } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet, type ViewStyle } from 'react-native';
+import { MusicNoteIcon } from './icons';
 import FastImage from 'react-native-fast-image';
 import { getCoverUrl } from '../services/player';
 import { getString, STORAGE_KEYS } from '../services/storage';
@@ -60,7 +61,7 @@ const CoverImage = React.memo(function CoverImage({
           style,
         ]}
       >
-        <Text style={styles.placeholderText}>♪</Text>
+        <MusicNoteIcon size={size * 0.4} color="#555" />
       </View>
     );
   }
@@ -99,6 +100,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#666',
   },
+  // placeholder icon is now SVG, no text style needed
   loader: {
     position: 'absolute',
     top: 0,
