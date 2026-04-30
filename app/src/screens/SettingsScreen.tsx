@@ -120,7 +120,7 @@ export default function SettingsScreen() {
 
       {/* App info */}
       <View style={styles.section}>
-        <Text style={[styles.versionText, { color: colors.textMuted }]}>StreamSound v0.2.0-alpha.7</Text>
+        <Text style={[styles.versionText, { color: colors.textMuted }]}>StreamSound v0.2.0-alpha.8</Text>
       </View>
     </ScrollView>
   );
