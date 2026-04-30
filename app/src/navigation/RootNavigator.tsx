@@ -31,7 +31,7 @@ export default function RootNavigator() {
           headerStyle: { backgroundColor: colors.headerBg },
           headerTintColor: colors.headerTint,
           headerTitleStyle: { fontWeight: '600' },
-          contentStyle: { backgroundColor: colors.background },
+          contentStyle: { backgroundColor: colors.background, flex: 1 },
         }}
       >
         {!isAuthenticated ? (
