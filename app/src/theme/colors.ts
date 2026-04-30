@@ -25,9 +25,6 @@ export function getColors(theme: Theme) {
     accent: '#1db954',
     accentText: '#ffffff',
 
-    // 状态栏
-    statusBarStyle: (isDark ? 'light-content' : 'dark-content') as 'light-content' | 'dark-content',
-
     // MiniPlayer (始终使用卡片风格)
     miniPlayerBg: isDark ? '#1e1e1e' : '#ffffff',
     miniPlayerText: isDark ? '#ffffff' : '#1a1a1a',

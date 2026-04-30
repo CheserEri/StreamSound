@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore, useSettingsStore } from '../store';
 import { getColors } from '../theme/colors';
 
@@ -11,7 +10,6 @@ export default function SettingsScreen() {
   const colors = useMemo(() => getColors(theme), [theme]);
   const [editServerUrl, setEditServerUrl] = useState(serverUrl);
   const navigation = useNavigation();
-  const insets = useSafeAreaInsets();
 
   const handleSaveServerUrl = () => {
     if (editServerUrl.trim()) { setServerUrl(editServerUrl.trim()); Alert.alert('提示', '服务器地址已更新'); }
@@ -121,7 +119,7 @@ export default function SettingsScreen() {
       </View>
 
       {/* App info */}
-      <View style={[styles.section, { paddingBottom: insets.bottom }]}>
+      <View style={styles.section}>
         <Text style={[styles.versionText, { color: colors.textMuted }]}>StreamSound v0.2.0-alpha.7</Text>
       </View>
     </ScrollView>

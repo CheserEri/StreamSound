@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSettingsStore } from '../store';
 import { getColors } from '../theme/colors';
 import api from '../services/api';
@@ -12,7 +11,6 @@ import type { HistoryTrack } from '../types';
 
 export default function HistoryScreen() {
   const { playTracks } = usePlayerActions();
-  const insets = useSafeAreaInsets();
   const theme = useSettingsStore((s) => s.theme);
   const colors = useMemo(() => getColors(theme), [theme]);
   const [history, setHistory] = useState<HistoryTrack[]>([]);
@@ -64,7 +62,7 @@ export default function HistoryScreen() {
           </TouchableOpacity>
         )}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.textSecondary} />}
-        contentContainerStyle={[styles.list, { paddingBottom: 76 + insets.bottom }]}
+        contentContainerStyle={[styles.list, { paddingBottom: 76 }]}
         ListEmptyComponent={<View style={styles.emptyContainer}><Text style={{ color: colors.textMuted }}>暂无播放记录</Text></View>}
       />
       <MiniPlayer />
