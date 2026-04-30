@@ -1,28 +1,20 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ScrollView,
-} from 'react-native';
-import { useAuthStore, useSettingsStore } from '../store';
-import { getServerUrl } from '../services/api';
+import React, { useState, useMemo } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuthStore, useSettingsStore } from '../store';
+import { getColors } from '../theme/colors';
 
 export default function SettingsScreen() {
   const { user, logout } = useAuthStore();
   const { serverUrl, lyricsSize, theme, setServerUrl, setLyricsSize, setTheme } = useSettingsStore();
+  const colors = useMemo(() => getColors(theme), [theme]);
   const [editServerUrl, setEditServerUrl] = useState(serverUrl);
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   const handleSaveServerUrl = () => {
-    if (editServerUrl.trim()) {
-      setServerUrl(editServerUrl.trim());
-      Alert.alert('提示', '服务器地址已更新');
-    }
+    if (editServerUrl.trim()) { setServerUrl(editServerUrl.trim()); Alert.alert('提示', '服务器地址已更新'); }
   };
 
   const handleLogout = () => {
@@ -33,48 +25,42 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* User info */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>账号</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>账号</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>用户名</Text>
-            <Text style={styles.infoValue}>{user?.username}</Text>
+            <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>用户名</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>{user?.username}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>角色</Text>
-            <Text style={styles.infoValue}>
-              {user?.role === 'admin' ? '管理员' : '普通用户'}
-            </Text>
+            <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>角色</Text>
+            <Text style={[styles.infoValue, { color: colors.text }]}>{user?.role === 'admin' ? '管理员' : '普通用户'}</Text>
           </View>
         </View>
       </View>
 
-      {/* Admin panel - only visible to admins */}
       {user?.role === 'admin' && (
         <View style={styles.section}>
-          <TouchableOpacity
-            style={styles.adminButton}
-            onPress={() => navigation.navigate('Admin' as never)}
-          >
-            <Text style={styles.adminButtonText}>管理员控制台</Text>
+          <TouchableOpacity style={[styles.adminButton, { borderColor: colors.buttonPrimary }]} onPress={() => navigation.navigate('Admin' as never)}>
+            <Text style={[styles.adminButtonText, { color: colors.buttonPrimary }]}>管理员控制台</Text>
           </TouchableOpacity>
         </View>
       )}
 
       {/* Server settings */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>服务器</Text>
-        <View style={styles.card}>
-          <Text style={styles.inputLabel}>服务器地址</Text>
+        <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>服务器</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>服务器地址</Text>
           <View style={styles.inputRow}>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.inputBg, color: colors.inputText }]}
               value={editServerUrl}
               onChangeText={setEditServerUrl}
               placeholder="http://192.168.31.184:3000"
-              placeholderTextColor="#666"
+              placeholderTextColor={colors.textMuted}
               autoCapitalize="none"
               autoCorrect={false}
             />
@@ -87,25 +73,17 @@ export default function SettingsScreen() {
 
       {/* Player settings */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>播放</Text>
-        <View style={styles.card}>
-          <Text style={styles.inputLabel}>歌词大小</Text>
+        <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>播放</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>歌词大小</Text>
           <View style={styles.optionRow}>
             {(['sm', 'md', 'lg'] as const).map((size) => (
               <TouchableOpacity
                 key={size}
-                style={[
-                  styles.optionButton,
-                  lyricsSize === size && styles.optionButtonActive,
-                ]}
+                style={[styles.optionButton, { backgroundColor: colors.inputBg }, lyricsSize === size && styles.optionButtonActive]}
                 onPress={() => setLyricsSize(size)}
               >
-                <Text
-                  style={[
-                    styles.optionButtonText,
-                    lyricsSize === size && styles.optionButtonTextActive,
-                  ]}
-                >
+                <Text style={[styles.optionButtonText, { color: colors.textSecondary }, lyricsSize === size && styles.optionButtonTextActive]}>
                   {size === 'sm' ? '小' : size === 'md' ? '中' : '大'}
                 </Text>
               </TouchableOpacity>
@@ -116,25 +94,17 @@ export default function SettingsScreen() {
 
       {/* Theme settings */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>外观</Text>
-        <View style={styles.card}>
-          <Text style={styles.inputLabel}>主题</Text>
+        <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>外观</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>主题</Text>
           <View style={styles.optionRow}>
             {(['dark', 'light'] as const).map((t) => (
               <TouchableOpacity
                 key={t}
-                style={[
-                  styles.optionButton,
-                  theme === t && styles.optionButtonActive,
-                ]}
+                style={[styles.optionButton, { backgroundColor: colors.inputBg }, theme === t && styles.optionButtonActive]}
                 onPress={() => setTheme(t)}
               >
-                <Text
-                  style={[
-                    styles.optionButtonText,
-                    theme === t && styles.optionButtonTextActive,
-                  ]}
-                >
+                <Text style={[styles.optionButtonText, { color: colors.textSecondary }, theme === t && styles.optionButtonTextActive]}>
                   {t === 'dark' ? '深色' : '浅色'}
                 </Text>
               </TouchableOpacity>
@@ -151,125 +121,34 @@ export default function SettingsScreen() {
       </View>
 
       {/* App info */}
-      <View style={styles.section}>
-        <Text style={styles.versionText}>StreamSound v0.1.0-alpha.1</Text>
+      <View style={[styles.section, { paddingBottom: insets.bottom }]}>
+        <Text style={[styles.versionText, { color: colors.textMuted }]}>StreamSound v0.2.0-alpha.7</Text>
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#121212',
-  },
-  section: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
-  },
-  sectionTitle: {
-    color: '#888',
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 12,
-    textTransform: 'uppercase',
-  },
-  card: {
-    backgroundColor: '#1e1e1e',
-    borderRadius: 12,
-    padding: 16,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  infoLabel: {
-    color: '#888',
-    fontSize: 15,
-  },
-  infoValue: {
-    color: '#fff',
-    fontSize: 15,
-  },
-  inputLabel: {
-    color: '#888',
-    fontSize: 13,
-    marginBottom: 8,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  input: {
-    flex: 1,
-    backgroundColor: '#2a2a2a',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 15,
-    color: '#fff',
-  },
-  saveButton: {
-    backgroundColor: '#2563eb',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    justifyContent: 'center',
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  optionRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  optionButton: {
-    flex: 1,
-    backgroundColor: '#2a2a2a',
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  optionButtonActive: {
-    backgroundColor: '#2563eb',
-  },
-  optionButtonText: {
-    color: '#888',
-    fontSize: 14,
-  },
-  optionButtonTextActive: {
-    color: '#fff',
-  },
-  logoutButton: {
-    backgroundColor: '#dc2626',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  logoutButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  adminButton: {
-    backgroundColor: '#1e1e1e',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#2563eb',
-  },
-  adminButtonText: {
-    color: '#2563eb',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  versionText: {
-    color: '#666',
-    fontSize: 12,
-    textAlign: 'center',
-    paddingBottom: 32,
-  },
+  container: { flex: 1 },
+  section: { paddingHorizontal: 16, paddingTop: 24 },
+  sectionTitle: { fontSize: 13, fontWeight: '600', marginBottom: 12, textTransform: 'uppercase' },
+  card: { borderRadius: 12, padding: 16 },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
+  infoLabel: { fontSize: 15 },
+  infoValue: { fontSize: 15 },
+  inputLabel: { fontSize: 13, marginBottom: 8 },
+  inputRow: { flexDirection: 'row', gap: 8 },
+  input: { flex: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15 },
+  saveButton: { backgroundColor: '#2563eb', borderRadius: 8, paddingHorizontal: 16, justifyContent: 'center' },
+  saveButtonText: { color: '#fff', fontSize: 14, fontWeight: '500' },
+  optionRow: { flexDirection: 'row', gap: 8 },
+  optionButton: { flex: 1, borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
+  optionButtonActive: { backgroundColor: '#2563eb' },
+  optionButtonText: { fontSize: 14 },
+  optionButtonTextActive: { color: '#fff' },
+  logoutButton: { backgroundColor: '#dc2626', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  logoutButtonText: { color: '#fff', fontSize: 16, fontWeight: '500' },
+  adminButton: { borderRadius: 12, paddingVertical: 14, alignItems: 'center', borderWidth: 1 },
+  adminButtonText: { fontSize: 16, fontWeight: '500' },
+  versionText: { fontSize: 12, textAlign: 'center', paddingBottom: 32 },
 });

@@ -62,6 +62,7 @@ export default function AnimatedPlayButton({
       onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
+      hitSlop={10}
     >
       {isPlaying ? (
         <PauseIcon size={iconSize} color={color} />

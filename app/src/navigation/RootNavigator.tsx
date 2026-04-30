@@ -2,7 +2,8 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useAuthStore } from '../store';
+import { useAuthStore, useSettingsStore } from '../store';
+import { getColors } from '../theme/colors';
 import LoginScreen from '../screens/LoginScreen';
 import LibraryScreen from '../screens/LibraryScreen';
 import FolderScreen from '../screens/FolderScreen';
@@ -19,16 +20,18 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
   const { isAuthenticated } = useAuthStore();
+  const theme = useSettingsStore((s) => s.theme);
+  const colors = getColors(theme);
 
   return (
     <SafeAreaProvider>
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
-          headerStyle: { backgroundColor: '#1a1a1a' },
-          headerTintColor: '#fff',
+          headerStyle: { backgroundColor: colors.headerBg },
+          headerTintColor: colors.headerTint,
           headerTitleStyle: { fontWeight: '600' },
-          contentStyle: { backgroundColor: '#121212' },
+          contentStyle: { backgroundColor: colors.background },
         }}
       >
         {!isAuthenticated ? (

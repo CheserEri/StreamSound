@@ -8,6 +8,8 @@ import { MusicNoteIcon } from './icons';
 import FastImage from 'react-native-fast-image';
 import { getCoverUrl } from '../services/player';
 import { getString, STORAGE_KEYS } from '../services/storage';
+import { useSettingsStore } from '../store';
+import { getColors } from '../theme/colors';
 
 /**
  * 封面图片组件属性接口
@@ -38,8 +40,9 @@ const CoverImage = React.memo(function CoverImage({
 }: CoverImageProps) {
   // 加载状态
   const [loading, setLoading] = useState(true);
-  // 错误状态
   const [error, setError] = useState(false);
+  const theme = useSettingsStore((s) => s.theme);
+  const colors = useMemo(() => getColors(theme), [theme]);
 
   // 构建带认证头的图片源
   const source = useMemo(() => {
@@ -57,11 +60,11 @@ const CoverImage = React.memo(function CoverImage({
       <View
         style={[
           styles.placeholder,
-          { width: size, height: size, borderRadius },
+          { width: size, height: size, borderRadius, backgroundColor: colors.placeholder },
           style,
         ]}
       >
-        <MusicNoteIcon size={size * 0.4} color="#555" />
+        <MusicNoteIcon size={size * 0.4} color={colors.placeholderIcon} />
       </View>
     );
   }

@@ -1,17 +1,10 @@
-/**
- * 迷你播放器组件 - 全新 UI
- *
- * 设计特点:
- * - 顶部播放进度线 (Spotify 风格)
- * - 毛玻璃效果背景
- * - SVG 图标
- * - 流畅的展开动画
- */
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { usePlayerStore } from '../store';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePlayerStore, useSettingsStore } from '../store';
+import { getColors } from '../theme/colors';
 import CoverImage from './CoverImage';
 import AnimatedPlayButton from './AnimatedPlayButton';
 import { QueueIcon } from './icons';
@@ -21,6 +14,9 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function MiniPlayer() {
   const navigation = useNavigation<NavigationProp>();
+  const insets = useSafeAreaInsets();
+  const theme = useSettingsStore((s) => s.theme);
+  const colors = getColors(theme);
   const currentTrack = usePlayerStore((s) => (s.currentIndex >= 0 ? s.queue[s.currentIndex] : null));
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const play = usePlayerStore((s) => s.play);
@@ -30,56 +26,54 @@ export default function MiniPlayer() {
 
   if (!currentTrack) return null;
 
-  // Progress percentage for the top bar
   const progressPercent = duration > 0 ? (progress / duration) * 100 : 0;
 
   return (
-    <TouchableOpacity
-      style={styles.container}
-      onPress={() => navigation.navigate('Player')}
-      activeOpacity={0.95}
-    >
+    <View style={[styles.container, { paddingBottom: insets.bottom, backgroundColor: colors.miniPlayerBg }]}>
       {/* Progress line at top */}
-      <View style={styles.progressBarBg}>
+      <View style={[styles.progressBarBg, { backgroundColor: colors.miniPlayerProgressBg }]}>
         <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
       </View>
 
-      {/* Left: circular album cover */}
-      <CoverImage
-        trackId={currentTrack.id}
-        hasCover={currentTrack.hasCover}
-        size={48}
-        borderRadius={24}
-      />
+      {/* Touchable area: cover + info → navigates to Player */}
+      <TouchableOpacity
+        style={styles.touchableArea}
+        onPress={() => navigation.navigate('Player')}
+        activeOpacity={0.7}
+      >
+        <CoverImage
+          trackId={currentTrack.id}
+          hasCover={currentTrack.hasCover}
+          size={48}
+          borderRadius={24}
+        />
+        <View style={styles.info}>
+          <Text style={[styles.title, { color: colors.miniPlayerText }]} numberOfLines={1}>
+            {currentTrack.title}
+          </Text>
+          <Text style={[styles.artist, { color: colors.miniPlayerSubtext }]} numberOfLines={1}>
+            {currentTrack.artist || '未知艺术家'}
+          </Text>
+        </View>
+      </TouchableOpacity>
 
-      {/* Middle: song info */}
-      <View style={styles.info}>
-        <Text style={styles.title} numberOfLines={1}>
-          {currentTrack.title}
-        </Text>
-        <Text style={styles.artist} numberOfLines={1}>
-          {currentTrack.artist || '未知艺术家'}
-        </Text>
-      </View>
-
-      {/* Right: controls */}
+      {/* Controls: NOT nested inside navigation touchable */}
       <View style={styles.controls}>
         <AnimatedPlayButton
           isPlaying={isPlaying}
           onPress={isPlaying ? pause : play}
           size={40}
-          color="#1a1a1a"
+          color={colors.miniPlayerIcon}
         />
-
         <TouchableOpacity
           style={styles.queueButton}
           onPress={() => navigation.navigate('Queue')}
           hitSlop={8}
         >
-          <QueueIcon size={22} color="#333" />
+          <QueueIcon size={22} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -91,10 +85,9 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    height: 76,
+    paddingVertical: 10,
+    minHeight: 76,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     shadowColor: '#000',
@@ -102,7 +95,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 16,
     elevation: 12,
-    overflow: 'hidden',
+  },
+  touchableArea: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   progressBarBg: {
     position: 'absolute',
@@ -110,7 +107,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 3,
-    backgroundColor: '#e0e0e0',
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
   },
@@ -126,12 +122,10 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   title: {
-    color: '#1a1a1a',
     fontSize: 15,
     fontWeight: '600',
   },
   artist: {
-    color: '#888',
     fontSize: 12,
     marginTop: 2,
   },
