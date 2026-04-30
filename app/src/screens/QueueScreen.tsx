@@ -12,6 +12,7 @@ import { usePlayerStore } from '../store';
 import { getCoverUrl } from '../services/player';
 import FastImage from 'react-native-fast-image';
 import { formatDuration, getModeIcon } from '../utils/format';
+import { PlayIcon, MusicNoteIcon } from '../components/icons';
 import type { TrackListItem } from '../types';
 
 export default function QueueScreen() {
@@ -143,7 +144,7 @@ export default function QueueScreen() {
               ) : (
                 <View style={styles.trackIndex}>
                   {isCurrentTrack ? (
-                    <Text style={styles.playingIcon}>▶</Text>
+                    <PlayIcon size={14} color="#1db954" />
                   ) : (
                     <Text style={styles.trackIndexText}>{index + 1}</Text>
                   )}
@@ -157,7 +158,7 @@ export default function QueueScreen() {
                 />
               ) : (
                 <View style={[styles.trackCover, styles.trackCoverPlaceholder]}>
-                  <Text style={styles.trackCoverText}>♪</Text>
+                  <MusicNoteIcon size={18} color="#555" />
                 </View>
               )}
 

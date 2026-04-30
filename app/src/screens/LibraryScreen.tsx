@@ -11,6 +11,14 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import api from '../services/api';
 import MiniPlayer from '../components/MiniPlayer';
+import {
+  SearchIcon,
+  HeartFilledIcon,
+  ClockIcon,
+  SettingsIcon,
+  FolderIcon,
+  MusicNoteIcon,
+} from '../components/icons';
 import type { RootStackParamList, Folder } from '../types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Library'>;
@@ -91,19 +99,27 @@ export default function LibraryScreen() {
       {/* Quick actions */}
       <View style={styles.quickActions}>
         <TouchableOpacity style={styles.actionButton} onPress={handleSearchPress}>
-          <Text style={styles.actionIcon}>🔍</Text>
+          <View style={styles.actionIconCircle}>
+            <SearchIcon size={20} color="#fff" />
+          </View>
           <Text style={styles.actionText}>搜索</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={handleFavoritesPress}>
-          <Text style={styles.actionIcon}>❤️</Text>
+          <View style={[styles.actionIconCircle, { backgroundColor: '#e74c3c' }]}>
+            <HeartFilledIcon size={20} color="#fff" />
+          </View>
           <Text style={styles.actionText}>收藏</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={handleHistoryPress}>
-          <Text style={styles.actionIcon}>🕐</Text>
+          <View style={[styles.actionIconCircle, { backgroundColor: '#3498db' }]}>
+            <ClockIcon size={20} color="#fff" />
+          </View>
           <Text style={styles.actionText}>最近</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={handleSettingsPress}>
-          <Text style={styles.actionIcon}>⚙️</Text>
+          <View style={[styles.actionIconCircle, { backgroundColor: '#666' }]}>
+            <SettingsIcon size={20} color="#fff" />
+          </View>
           <Text style={styles.actionText}>设置</Text>
         </TouchableOpacity>
       </View>
@@ -118,7 +134,7 @@ export default function LibraryScreen() {
             onPress={() => handleFolderPress(item)}
           >
             <View style={styles.folderIcon}>
-              <Text style={styles.folderIconText}>📁</Text>
+              <FolderIcon size={22} color="#666" />
             </View>
             <View style={styles.folderInfo}>
               <Text style={styles.folderName} numberOfLines={1}>
@@ -185,14 +201,20 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
-  actionIcon: {
-    fontSize: 24,
+  actionIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#1db954',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   actionText: {
     color: '#ccc',
     fontSize: 12,
+    fontWeight: '500',
   },
   list: {
     paddingVertical: 8,
@@ -208,13 +230,10 @@ const styles = StyleSheet.create({
   folderIcon: {
     width: 44,
     height: 44,
-    borderRadius: 8,
+    borderRadius: 12,
     backgroundColor: '#1e1e1e',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  folderIconText: {
-    fontSize: 20,
   },
   folderInfo: {
     flex: 1,

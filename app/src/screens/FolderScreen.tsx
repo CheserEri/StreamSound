@@ -14,6 +14,7 @@ import api from '../services/api';
 import { usePlayerActions } from '../hooks/usePlayer';
 import { usePlayerStore } from '../store';
 import MiniPlayer from '../components/MiniPlayer';
+import { PlayIcon, ShuffleIcon } from '../components/icons';
 import type { RootStackParamList, TrackListItem } from '../types';
 import CoverImage from '../components/CoverImage';
 import { formatDuration } from '../utils/format';
@@ -117,10 +118,16 @@ export default function FolderScreen() {
       {/* Action buttons */}
       <View style={styles.actions}>
         <TouchableOpacity style={styles.actionButton} onPress={handlePlayAll}>
-          <Text style={styles.actionButtonText}>▶ 全部播放</Text>
+          <View style={styles.actionButtonInner}>
+            <PlayIcon size={16} color="#fff" />
+            <Text style={styles.actionButtonText}>全部播放</Text>
+          </View>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={handleShufflePlay}>
-          <Text style={styles.actionButtonText}>🔀 随机播放</Text>
+          <View style={styles.actionButtonInner}>
+            <ShuffleIcon size={16} color="#fff" />
+            <Text style={styles.actionButtonText}>随机播放</Text>
+          </View>
         </TouchableOpacity>
       </View>
 
@@ -221,6 +228,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
+  },
+  actionButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   actionButtonText: {
     color: '#fff',

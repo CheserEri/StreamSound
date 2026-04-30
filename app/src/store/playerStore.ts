@@ -196,6 +196,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
           if (event.index !== undefined) {
             set({ currentIndex: event.index });
             persistQueueDebounced(get().queue, event.index);
+            // 新歌切换时重置进度，从元数据预取时长
+            const q = get().queue;
+            if (event.index >= 0 && event.index < q.length) {
+              const metaDuration = q[event.index].duration || 0;
+              set({ progress: 0, duration: metaDuration });
+            }
           }
         });
 
