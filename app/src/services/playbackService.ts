@@ -13,7 +13,7 @@ module.exports = async function () {
   TrackPlayer.addEventListener(Event.RemotePause, () => TrackPlayer.pause());
 
   // 监听远程停止
-  TrackPlayer.addEventListener(Event.RemoteStop, () => TrackPlayer.destroy());
+  TrackPlayer.addEventListener(Event.RemoteStop, () => TrackPlayer.stop());
 
   // 监听远程下一曲
   TrackPlayer.addEventListener(Event.RemoteNext, () => TrackPlayer.skipToNext());
