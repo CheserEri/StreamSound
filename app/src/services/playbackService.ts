@@ -2,10 +2,12 @@
  * 播放器后台服务
  * 处理来自通知栏/锁屏/耳机的远程控制事件
  * react-native-track-player 要求在 index.js 中注册此服务
+ *
+ * 注意: 必须使用 module.exports (CommonJS)，因为 index.js 通过 require() 加载
  */
 import TrackPlayer, { Event } from 'react-native-track-player';
 
-export default async function () {
+module.exports = async function () {
   // 监听远程播放
   TrackPlayer.addEventListener(Event.RemotePlay, () => TrackPlayer.play());
 
@@ -26,7 +28,7 @@ export default async function () {
     TrackPlayer.seekTo(event.position);
   });
 
-  // 监听远程跳转到指定曲目（锁屏控制台）
+  // 音频焦点变化 (其他 App 播放声音时暂停/恢复)
   TrackPlayer.addEventListener(Event.RemoteDuck, (event) => {
     if (event.paused) {
       TrackPlayer.pause();
