@@ -2,6 +2,12 @@
 
 All notable changes to StreamSound are documented in this file.
 
+## [0.2.0-alpha.6] - 2026-04-30
+
+### Fixed
+- 修复点击音乐文件夹后应用闪退的问题：新 UI 提交引入了 `react-native-reanimated` 和 `react-native-svg` 原生依赖，但未执行 `npm install` 导致模块缺失
+- 修复 `playbackService.ts` 导出格式不匹配的问题：`module.exports` 改为 `export default`，修复通知栏/锁屏控制服务无法注册
+
 ## [0.2.0-alpha.5] - 2026-04-30
 
 ### Added
