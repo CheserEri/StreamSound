@@ -5,7 +5,7 @@
  */
 import TrackPlayer, { Event } from 'react-native-track-player';
 
-module.exports = async function () {
+export default async function () {
   // 监听远程播放
   TrackPlayer.addEventListener(Event.RemotePlay, () => TrackPlayer.play());
 
