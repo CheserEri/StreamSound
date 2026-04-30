@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSettingsStore } from '../store';
 import { getColors } from '../theme/colors';
 import api from '../services/api';
@@ -26,6 +27,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Library'>;
 
 export default function LibraryScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const insets = useSafeAreaInsets();
   const theme = useSettingsStore((s) => s.theme);
   const colors = useMemo(() => getColors(theme), [theme]);
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -123,7 +125,7 @@ export default function LibraryScreen() {
         refreshControl={
           <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.textSecondary} />
         }
-        contentContainerStyle={[styles.list, { paddingBottom: 76 }]}
+        contentContainerStyle={[styles.list, { paddingBottom: 76 + insets.bottom }]}
       />
 
       <MiniPlayer />

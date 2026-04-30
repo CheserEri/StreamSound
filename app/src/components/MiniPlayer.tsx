@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePlayerStore, useSettingsStore } from '../store';
 import { getColors } from '../theme/colors';
 import CoverImage from './CoverImage';
@@ -13,6 +14,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function MiniPlayer() {
   const navigation = useNavigation<NavigationProp>();
+  const insets = useSafeAreaInsets();
   const theme = useSettingsStore((s) => s.theme);
   const colors = getColors(theme);
   const currentTrack = usePlayerStore((s) => (s.currentIndex >= 0 ? s.queue[s.currentIndex] : null));
@@ -27,7 +29,7 @@ export default function MiniPlayer() {
   const progressPercent = duration > 0 ? (progress / duration) * 100 : 0;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.miniPlayerBg }]}>
+    <View style={[styles.container, { backgroundColor: colors.miniPlayerBg, bottom: insets.bottom }]}>
       {/* Progress line at top */}
       <View style={[styles.progressBarBg, { backgroundColor: colors.miniPlayerProgressBg }]}>
         <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
