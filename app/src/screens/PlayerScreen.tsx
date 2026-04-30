@@ -140,8 +140,7 @@ export default function PlayerScreen() {
   const getModeIconComponent = () => {
     switch (mode) {
       case 'shuffle': return <ShuffleIcon size={20} color="#aaa" />;
-      case 'repeat-one': return <RepeatOneIcon size={20} color="#1db954" />;
-      case 'repeat': return <RepeatIcon size={20} color="#1db954" />;
+      case 'repeat': return <RepeatOneIcon size={20} color="#1db954" />;
       default: return <RepeatIcon size={20} color="#aaa" />;
     }
   };
