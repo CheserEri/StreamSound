@@ -2,15 +2,6 @@
 
 All notable changes to StreamSound are documented in this file.
 
-## [0.2.0-alpha.12] - 2026-05-02
-
-### Changed
-- **全面屏手势提示线适配**: 启用 edge-to-edge 沉浸式显示模式，App 内容延伸到状态栏和导航栏区域
-- `styles.xml`: 状态栏和导航栏设为透明
-- `MainActivity.kt`: 调用 `WindowCompat.setDecorFitsSystemWindows(window, false)` 启用 edge-to-edge
-- `App.tsx`: StatusBar 设为透明背景，配合沉浸式模式
-- 所有页面增加 `insets.bottom` 底部安全间距，防止内容被手势提示线遮挡（QueueScreen、SettingsScreen、AdminScreen 新增，其余页面已有）
-
 ## [0.2.0-alpha.11] - 2026-05-02
 
 ### Fixed
