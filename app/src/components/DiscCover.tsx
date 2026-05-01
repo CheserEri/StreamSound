@@ -1,9 +1,10 @@
 /**
  * Spinning vinyl disc with album cover
+ * Background: blurred album cover image for visual connection
  * Plays continuously when playing, stops on pause
  */
-import React, { useMemo } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Image, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -14,6 +15,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSettingsStore } from '../store';
 import { getColors } from '../theme/colors';
+import { getCoverUrl } from '../services/player';
+import { getString, STORAGE_KEYS } from '../services/storage';
 import CoverImage from './CoverImage';
 
 interface DiscCoverProps {
@@ -32,6 +35,10 @@ export default function DiscCover({
   const rotation = useSharedValue(0);
   const theme = useSettingsStore((s) => s.theme);
   const colors = useMemo(() => getColors(theme), [theme]);
+  const [bgError, setBgError] = useState(false);
+
+  const coverUrl = useMemo(() => getCoverUrl(trackId), [trackId]);
+  const token = useMemo(() => getString(STORAGE_KEYS.ACCESS_TOKEN), []);
 
   React.useEffect(() => {
     if (isPlaying) {
@@ -51,6 +58,7 @@ export default function DiscCover({
 
   const innerSize = size * 0.75;
   const ringWidth = (size - innerSize) / 2;
+  const bgSize = size * 1.6;
 
   // Vinyl groove radii (concentric circles between ring edge and cover)
   const grooveRadii = [
@@ -61,6 +69,20 @@ export default function DiscCover({
 
   return (
     <View style={[styles.container, { width: size, height: size }]}>
+      {/* Blurred album cover background */}
+      {hasCover && !bgError && (
+        <View style={[styles.bgLayer, { width: bgSize, height: bgSize }]} pointerEvents="none">
+          <Image
+            source={{ uri: coverUrl, headers: token ? { Authorization: `Bearer ${token}` } : undefined }}
+            style={styles.bgImage}
+            blurRadius={40}
+            resizeMode="cover"
+            onError={() => setBgError(true)}
+          />
+          <View style={styles.bgOverlay} />
+        </View>
+      )}
+
       {/* Outer vinyl ring */}
       <View
         style={[
@@ -137,6 +159,19 @@ const styles = StyleSheet.create({
   container: {
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  bgLayer: {
+    position: 'absolute',
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  bgImage: {
+    width: '100%',
+    height: '100%',
+  },
+  bgOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
   },
   vinylRing: {
     position: 'absolute',

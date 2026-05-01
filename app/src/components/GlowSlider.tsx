@@ -47,7 +47,9 @@ export default function GlowSlider({
   const seekToPosition = useCallback(
     (x: number) => {
       const clampedX = Math.max(0, Math.min(x, SLIDER_WIDTH));
-      const newValue = (clampedX / SLIDER_WIDTH) * maximumValue;
+      const ratio = clampedX / SLIDER_WIDTH;
+      const newValue = ratio * maximumValue;
+      if (!isFinite(newValue) || newValue < 0) return;
       onSeek(newValue);
     },
     [maximumValue, onSeek],
