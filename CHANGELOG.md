@@ -2,6 +2,11 @@
 
 All notable changes to StreamSound are documented in this file.
 
+## [0.2.0-alpha.12] - 2026-05-02
+
+### Reverted
+- 撤回澎湃OS2全面屏手势提示线沉浸式适配（edge-to-edge 模式），恢复原有状态栏/导航栏行为
+
 ## [0.2.0-alpha.11] - 2026-05-02
 
 ### Fixed
