@@ -29,6 +29,8 @@ const HISTORY_REPORT_THRESHOLD = 30;
 const PLAY_MODES: PlayMode[] = ['sequential', 'shuffle', 'repeat'];
 // 播放器初始化 Promise（用于防止重复初始化）
 let setupPromise: Promise<void> | null = null;
+// 进度轮询定时器
+let progressInterval: ReturnType<typeof setInterval> | null = null;
 
 /**
  * 获取存储的播放模式
@@ -43,8 +45,6 @@ let persistTimeout: ReturnType<typeof setTimeout> | null = null;
 
 /**
  * 防抖持久化队列
- * @param queue 队列数据
- * @param index 当前索引
  */
 function persistQueueDebounced(queue: TrackListItem[], index: number) {
   if (persistTimeout) clearTimeout(persistTimeout);
@@ -54,16 +54,60 @@ function persistQueueDebounced(queue: TrackListItem[], index: number) {
 }
 
 /**
+ * 启动进度轮询
+ */
+function startProgressPolling(get: () => PlayerState, set: (partial: Partial<PlayerState>) => void) {
+  stopProgressPolling();
+  progressInterval = setInterval(async () => {
+    try {
+      const progress = await TrackPlayer.getProgress();
+      const { currentIndex: idx, queue: q, reportedTracks: reported } = get();
+
+      // 流式音频可能延迟报告 duration，使用元数据作为兜底
+      let duration = progress.duration;
+      if ((!duration || duration <= 0) && idx >= 0 && idx < q.length) {
+        duration = q[idx].duration || 0;
+      }
+
+      set({ progress: progress.position, duration });
+
+      // 播放历史上报
+      if (idx >= 0 && idx < q.length && !reported.has(q[idx].id)) {
+        const shouldReport =
+          progress.position >= HISTORY_REPORT_THRESHOLD ||
+          (progress.duration > 0 && progress.position >= progress.duration - 1);
+        if (shouldReport) {
+          reportPlayHistory(q[idx].id);
+          set({ reportedTracks: new Set([...reported, q[idx].id]) });
+        }
+      }
+    } catch {
+      // 播放器未就绪，忽略
+    }
+  }, 250);
+}
+
+/**
+ * 停止进度轮询
+ */
+function stopProgressPolling() {
+  if (progressInterval) {
+    clearInterval(progressInterval);
+    progressInterval = null;
+  }
+}
+
+/**
  * 播放器状态接口
  */
 interface PlayerState {
-  queue: TrackListItem[];              // 播放队列
-  currentIndex: number;                // 当前播放索引
-  mode: PlayMode;                      // 播放模式
-  isPlaying: boolean;                  // 是否正在播放
-  progress: number;                    // 当前进度（秒）
-  duration: number;                    // 歌曲时长（秒）
-  reportedTracks: Set<number>;         // 已上报历史的歌曲ID集合
+  queue: TrackListItem[];
+  currentIndex: number;
+  mode: PlayMode;
+  isPlaying: boolean;
+  progress: number;
+  duration: number;
+  reportedTracks: Set<number>;
 
   setQueue: (tracks: TrackListItem[], startIndex?: number) => Promise<void>;
   appendToQueue: (tracks: TrackListItem[]) => Promise<void>;
@@ -117,12 +161,10 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
     setupPromise = (async () => {
       try {
-        // 初始化 TrackPlayer
         await TrackPlayer.setupPlayer({
           autoHandleInterruptions: true,
         });
 
-        // 更新播放器配置
         await TrackPlayer.updateOptions({
           android: {
             appKilledPlaybackBehavior:
@@ -166,37 +208,11 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
           set({ queue, currentIndex: safeIndex });
         }
 
-        // 监听播放状态变化
-        TrackPlayer.addEventListener(Event.PlaybackState, (event) => {
-          set({ isPlaying: event.state === State.Playing });
-        });
-
-        // 监听播放进度更新
-        TrackPlayer.addEventListener(Event.PlaybackProgressUpdated, (event) => {
-          const { currentIndex: idx, queue: q, reportedTracks: reported } = get();
-          // 流式音频可能延迟报告 duration，使用元数据作为兜底
-          let duration = event.duration;
-          if ((!duration || duration <= 0) && idx >= 0 && idx < q.length) {
-            duration = q[idx].duration || 0;
-          }
-          set({ progress: event.position, duration });
-          if (idx >= 0 && idx < q.length && !reported.has(q[idx].id)) {
-            const shouldReport =
-              event.position >= HISTORY_REPORT_THRESHOLD ||
-              (event.duration > 0 && event.position >= event.duration - 1);
-            if (shouldReport) {
-              reportPlayHistory(q[idx].id);
-              set({ reportedTracks: new Set([...reported, q[idx].id]) });
-            }
-          }
-        });
-
         // 监听当前播放歌曲变化
         TrackPlayer.addEventListener(Event.PlaybackActiveTrackChanged, (event) => {
           if (event.index !== undefined) {
             set({ currentIndex: event.index });
             persistQueueDebounced(get().queue, event.index);
-            // 新歌切换时重置进度，从元数据预取时长
             const q = get().queue;
             if (event.index >= 0 && event.index < q.length) {
               const metaDuration = q[event.index].duration || 0;
@@ -207,8 +223,39 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
         // 监听播放准备状态变化
         TrackPlayer.addEventListener(Event.PlaybackPlayWhenReadyChanged, (event) => {
-          set({ isPlaying: event.playWhenReady });
+          const isNowPlaying = event.playWhenReady;
+          set({ isPlaying: isNowPlaying });
+          if (isNowPlaying) {
+            startProgressPolling(get, set);
+          } else {
+            stopProgressPolling();
+          }
         });
+
+        // 监听播放状态变化（补充：处理缓冲等中间状态）
+        TrackPlayer.addEventListener(Event.PlaybackState, (event) => {
+          const playing = event.state === State.Playing;
+          const { isPlaying: current } = get();
+          if (playing !== current) {
+            set({ isPlaying: playing });
+          }
+          if (playing && !progressInterval) {
+            startProgressPolling(get, set);
+          } else if (!playing && event.state !== State.Buffering) {
+            stopProgressPolling();
+          }
+        });
+
+        // 检查当前是否已在播放（恢复场景），启动轮询
+        try {
+          const state = await TrackPlayer.getState();
+          if (state === State.Playing) {
+            set({ isPlaying: true });
+            startProgressPolling(get, set);
+          }
+        } catch {
+          // 播放器未就绪
+        }
       } catch (error) {
         console.error('Failed to setup player:', error);
         setupPromise = null;
@@ -220,8 +267,6 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   /**
    * 设置播放队列
-   * @param tracks 歌曲列表
-   * @param startIndex 开始播放索引
    */
   setQueue: async (tracks: TrackListItem[], startIndex = 0) => {
     const rntpTracks = tracks.map(mapTrackToRNTP);
@@ -230,12 +275,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     await TrackPlayer.skip(startIndex);
     await TrackPlayer.play();
     set({ queue: tracks, currentIndex: startIndex, isPlaying: true, reportedTracks: new Set() });
+    startProgressPolling(get, set);
     persistQueueDebounced(tracks, startIndex);
   },
 
   /**
    * 追加到播放队列
-   * @param tracks 要追加的歌曲列表
    */
   appendToQueue: async (tracks: TrackListItem[]) => {
     const rntpTracks = tracks.map(mapTrackToRNTP);
@@ -253,6 +298,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   play: async () => {
     await TrackPlayer.play();
     set({ isPlaying: true });
+    startProgressPolling(get, set);
   },
 
   /**
@@ -261,6 +307,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   pause: async () => {
     await TrackPlayer.pause();
     set({ isPlaying: false });
+    stopProgressPolling();
   },
 
   /**
@@ -284,17 +331,16 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     await TrackPlayer.skip(nextIndex);
     await TrackPlayer.play();
     set({ currentIndex: nextIndex, isPlaying: true });
+    startProgressPolling(get, set);
     persistQueueDebounced(queue, nextIndex);
   },
 
   /**
    * 跳转到上一首
-   * 如果播放超过3秒，重新播放当前歌曲
    */
   skipToPrevious: async () => {
     const { currentIndex, progress } = get();
 
-    // 如果播放超过3秒，重新播放当前歌曲
     if (progress > 3) {
       await TrackPlayer.seekTo(0);
       set({ progress: 0 });
@@ -307,12 +353,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     await TrackPlayer.skip(prevIndex);
     await TrackPlayer.play();
     set({ currentIndex: prevIndex, isPlaying: true });
+    startProgressPolling(get, set);
     persistQueueDebounced(get().queue, prevIndex);
   },
 
   /**
    * 跳转到指定位置
-   * @param position 位置（秒）
    */
   seekTo: async (position: number) => {
     await TrackPlayer.seekTo(position);
