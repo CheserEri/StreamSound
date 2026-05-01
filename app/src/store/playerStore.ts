@@ -31,6 +31,9 @@ const PLAY_MODES: PlayMode[] = ['sequential', 'shuffle', 'repeat'];
 let setupPromise: Promise<void> | null = null;
 // 进度轮询定时器
 let progressInterval: ReturnType<typeof setInterval> | null = null;
+// seek 标记：防止轮询覆盖 seekTo 设置的进度
+let isSeeking = false;
+let seekTimeout: ReturnType<typeof setTimeout> | null = null;
 
 /**
  * 获取存储的播放模式
@@ -69,7 +72,13 @@ function startProgressPolling(get: () => PlayerState, set: (partial: Partial<Pla
         duration = q[idx].duration || 0;
       }
 
-      set({ progress: progress.position, duration });
+      // seek 期间不更新进度，避免轮询覆盖 seekTo 设置的值
+      if (!isSeeking) {
+        set({ progress: progress.position, duration });
+      } else {
+        // seek 期间仍然更新 duration
+        set({ duration });
+      }
 
       // 播放历史上报
       if (idx >= 0 && idx < q.length && !reported.has(q[idx].id)) {
@@ -361,8 +370,27 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
    * 跳转到指定位置
    */
   seekTo: async (position: number) => {
-    await TrackPlayer.seekTo(position);
-    set({ progress: position });
+    // 校验：防止 NaN / Infinity / 负数 / 超出时长
+    if (!isFinite(position) || position < 0) return;
+    const { duration } = get();
+    const maxDuration = duration || 0;
+    const clamped = maxDuration > 0 ? Math.min(position, maxDuration) : position;
+
+    // 设置 seek 标记，防止轮询覆盖进度
+    isSeeking = true;
+    if (seekTimeout) clearTimeout(seekTimeout);
+
+    try {
+      await TrackPlayer.seekTo(clamped);
+      set({ progress: clamped });
+    } catch {
+      // seek 失败（可能格式不支持精确 seek），静默处理
+    }
+
+    // 1 秒后恢复轮询更新（给 ExoPlayer 足够时间完成 seek）
+    seekTimeout = setTimeout(() => {
+      isSeeking = false;
+    }, 1000);
   },
 
   /**

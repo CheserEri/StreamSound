@@ -2,6 +2,18 @@
 
 All notable changes to StreamSound are documented in this file.
 
+## [0.2.0-alpha.14] - 2026-05-02
+
+### Fixed
+- 修复特定格式（高码率 FLAC）拖拽进度条 seek 失败的问题：进度轮询与 seekTo 竞争导致进度被覆盖回跳
+- 新增 `isSeeking` 标记，seekTo 后 1 秒内暂停轮询更新进度，给 ExoPlayer 足够时间完成 seek
+- seekTo 增加 NaN/Infinity/负数校验，防止无效 seek 调用
+- GlowSlider seek 计算增加 isFinite 校验
+- 服务端 stream 路由：无 Range 头时从 206 修正为 200（HTTP 规范合规）
+
+### Changed
+- **DiscCover 背景联动**: 唱片转盘后方新增模糊专辑封面背景层（blurRadius=40, 暗色遮罩），消除纯黑背景，增强封面与唱片的视觉关联
+
 ## [0.2.0-alpha.13] - 2026-05-02
 
 ### Fixed

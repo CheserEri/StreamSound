@@ -79,12 +79,11 @@ export default async function streamRoutes(fastify: FastifyInstance) {
       return reply.hijack();
     }
 
-    // 没有 Range 头：传输整个文件
-    reply.code(206);
+    // 没有 Range 头：传输整个文件（应返回 200，不是 206）
+    reply.code(200);
     reply.header('Content-Length', fileSize);
     reply.header('Content-Type', mimeType);
     reply.header('Accept-Ranges', 'bytes');
-    reply.header('Content-Range', `bytes 0-${fileSize - 1}/${fileSize}`);
 
     const stream = createReadStream(track.path);
     stream.pipe(reply.raw);
