@@ -1,21 +1,19 @@
 /**
- * 唱片封面旋转动画
- * 播放时持续旋转，暂停时停止
- * 灵感来自 Apple Music / Spotify 黑胶唱片效果
+ * Spinning vinyl disc with album cover
+ * Plays continuously when playing, stops on pause
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
   withTiming,
-  withSequence,
-  interpolate,
   Easing,
   cancelAnimation,
-  runOnJS,
 } from 'react-native-reanimated';
+import { useSettingsStore } from '../store';
+import { getColors } from '../theme/colors';
 import CoverImage from './CoverImage';
 
 interface DiscCoverProps {
@@ -32,12 +30,14 @@ export default function DiscCover({
   isPlaying,
 }: DiscCoverProps) {
   const rotation = useSharedValue(0);
+  const theme = useSettingsStore((s) => s.theme);
+  const colors = useMemo(() => getColors(theme), [theme]);
 
   React.useEffect(() => {
     if (isPlaying) {
       rotation.value = withRepeat(
         withTiming(360, { duration: 20000, easing: Easing.linear }),
-        -1, // infinite
+        -1,
         false,
       );
     } else {
@@ -52,6 +52,13 @@ export default function DiscCover({
   const innerSize = size * 0.75;
   const ringWidth = (size - innerSize) / 2;
 
+  // Vinyl groove radii (concentric circles between ring edge and cover)
+  const grooveRadii = [
+    size / 2 - ringWidth * 0.2,
+    size / 2 - ringWidth * 0.5,
+    size / 2 - ringWidth * 0.8,
+  ];
+
   return (
     <View style={[styles.container, { width: size, height: size }]}>
       {/* Outer vinyl ring */}
@@ -62,9 +69,27 @@ export default function DiscCover({
             width: size,
             height: size,
             borderRadius: size / 2,
+            backgroundColor: colors.discRing,
+            borderColor: colors.discRingBorder,
           },
         ]}
       />
+
+      {/* Vinyl grooves */}
+      {grooveRadii.map((radius, i) => (
+        <View
+          key={i}
+          style={[
+            styles.groove,
+            {
+              width: radius * 2,
+              height: radius * 2,
+              borderRadius: radius,
+              borderColor: colors.discRingBorder,
+            },
+          ]}
+        />
+      ))}
 
       {/* Spinning cover */}
       <Animated.View
@@ -78,7 +103,6 @@ export default function DiscCover({
           animatedStyle,
         ]}
       >
-        {/* Cover image */}
         <CoverImage
           trackId={trackId}
           hasCover={hasCover}
@@ -100,6 +124,8 @@ export default function DiscCover({
             width: 18,
             height: 18,
             borderRadius: 9,
+            backgroundColor: colors.discCenter,
+            borderColor: colors.discCenterBorder,
           },
         ]}
       />
@@ -114,18 +140,24 @@ const styles = StyleSheet.create({
   },
   vinylRing: {
     position: 'absolute',
-    backgroundColor: '#1a1a1a',
     borderWidth: 2,
-    borderColor: '#333',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  groove: {
+    position: 'absolute',
+    borderWidth: StyleSheet.hairlineWidth,
+    opacity: 0.3,
   },
   coverWrapper: {
     overflow: 'hidden',
   },
   centerHole: {
     position: 'absolute',
-    backgroundColor: '#0a0a0a',
     borderWidth: 2,
-    borderColor: '#333',
     zIndex: 10,
   },
 });

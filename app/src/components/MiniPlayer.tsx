@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -16,7 +16,7 @@ export default function MiniPlayer() {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
   const theme = useSettingsStore((s) => s.theme);
-  const colors = getColors(theme);
+  const colors = useMemo(() => getColors(theme), [theme]);
   const currentTrack = usePlayerStore((s) => (s.currentIndex >= 0 ? s.queue[s.currentIndex] : null));
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const play = usePlayerStore((s) => s.play);
@@ -32,21 +32,23 @@ export default function MiniPlayer() {
     <View style={[styles.container, { backgroundColor: colors.miniPlayerBg, bottom: insets.bottom }]}>
       {/* Progress line at top */}
       <View style={[styles.progressBarBg, { backgroundColor: colors.miniPlayerProgressBg }]}>
-        <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
+        <View style={[styles.progressBarFill, { width: `${progressPercent}%`, backgroundColor: colors.miniPlayerProgressFill }]} />
       </View>
 
-      {/* Touchable area: cover + info → navigates to Player */}
+      {/* Touchable area: cover + info -> navigates to Player */}
       <TouchableOpacity
         style={styles.touchableArea}
         onPress={() => navigation.navigate('Player')}
         activeOpacity={0.7}
       >
-        <CoverImage
-          trackId={currentTrack.id}
-          hasCover={currentTrack.hasCover}
-          size={48}
-          borderRadius={24}
-        />
+        <View style={styles.coverShadow}>
+          <CoverImage
+            trackId={currentTrack.id}
+            hasCover={currentTrack.hasCover}
+            size={48}
+            borderRadius={24}
+          />
+        </View>
         <View style={styles.info}>
           <Text style={[styles.title, { color: colors.miniPlayerText }]} numberOfLines={1}>
             {currentTrack.title}
@@ -57,7 +59,7 @@ export default function MiniPlayer() {
         </View>
       </TouchableOpacity>
 
-      {/* Controls: NOT nested inside navigation touchable */}
+      {/* Controls */}
       <View style={styles.controls}>
         <AnimatedPlayButton
           isPlaying={isPlaying}
@@ -70,7 +72,7 @@ export default function MiniPlayer() {
           onPress={() => navigation.navigate('Queue')}
           hitSlop={8}
         >
-          <QueueIcon size={22} color={colors.textSecondary} />
+          <QueueIcon size={22} color={colors.miniPlayerIcon} />
         </TouchableOpacity>
       </View>
     </View>
@@ -92,7 +94,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.15,
     shadowRadius: 16,
     elevation: 12,
   },
@@ -100,6 +102,13 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  coverShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
   progressBarBg: {
     position: 'absolute',
@@ -112,7 +121,6 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: 3,
-    backgroundColor: '#1db954',
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
   },
