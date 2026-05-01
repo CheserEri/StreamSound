@@ -1,7 +1,5 @@
 /**
- * 播放/暂停动画按钮
- * 使用 reanimated 实现缩放 + 透明度过渡动画
- * 参考 Spotify / Apple Music 风格
+ * Animated play/pause button with spring scale effects
  */
 import React, { useCallback } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
@@ -11,8 +9,6 @@ import Animated, {
   withSpring,
   withTiming,
   withSequence,
-  interpolate,
-  runOnJS,
 } from 'react-native-reanimated';
 import { PlayIcon, PauseIcon } from './icons';
 
@@ -23,6 +19,7 @@ interface AnimatedPlayButtonProps {
   onPress: () => void;
   size?: number;
   color?: string;
+  backgroundColor?: string;
 }
 
 export default function AnimatedPlayButton({
@@ -30,6 +27,7 @@ export default function AnimatedPlayButton({
   onPress,
   size = 68,
   color = '#fff',
+  backgroundColor = '#fff',
 }: AnimatedPlayButtonProps) {
   const scale = useSharedValue(1);
 
@@ -46,7 +44,6 @@ export default function AnimatedPlayButton({
   }, []);
 
   const handlePress = useCallback(() => {
-    // Pulse animation on tap
     scale.value = withSequence(
       withTiming(0.92, { duration: 80 }),
       withSpring(1, { damping: 12, stiffness: 300 }),
@@ -58,7 +55,17 @@ export default function AnimatedPlayButton({
 
   return (
     <AnimatedPressable
-      style={[styles.container, { width: size, height: size, borderRadius: size / 2 }, animatedStyle]}
+      style={[
+        styles.container,
+        {
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor,
+          shadowColor: backgroundColor,
+        },
+        animatedStyle,
+      ]}
       onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
@@ -75,10 +82,8 @@ export default function AnimatedPlayButton({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#fff',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.25,
     shadowRadius: 16,

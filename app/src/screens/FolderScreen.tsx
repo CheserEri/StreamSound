@@ -80,9 +80,9 @@ export default function FolderScreen() {
   if (error) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <Text style={{ color: '#ff4444', fontSize: 16, marginBottom: 16 }}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={() => fetchTracks()}>
-          <Text style={styles.retryText}>重试</Text>
+        <Text style={{ color: colors.error, fontSize: 16, marginBottom: 16 }}>{error}</Text>
+        <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.buttonPrimary }]} onPress={() => fetchTracks()}>
+          <Text style={[styles.retryText, { color: colors.buttonText }]}>重试</Text>
         </TouchableOpacity>
       </View>
     );
@@ -93,7 +93,7 @@ export default function FolderScreen() {
       <View style={[styles.actions, { borderBottomColor: colors.border }]}>
         <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.surface }]} onPress={handlePlayAll}>
           <View style={styles.actionButtonInner}>
-            <PlayIcon size={16} color={colors.text} />
+            <PlayIcon size={16} color={colors.accent} />
             <Text style={[styles.actionButtonText, { color: colors.text }]}>全部播放</Text>
           </View>
         </TouchableOpacity>
@@ -112,7 +112,10 @@ export default function FolderScreen() {
           const isCurrentTrack = currentTrack?.id === item.id;
           return (
             <TouchableOpacity
-              style={[styles.trackItem, isCurrentTrack && { backgroundColor: colors.activeBg }]}
+              style={[
+                styles.trackItem,
+                isCurrentTrack && { backgroundColor: colors.activeBg, borderLeftWidth: 3, borderLeftColor: colors.accent },
+              ]}
               onPress={() => handleTrackPress(item)}
             >
               <CoverImage trackId={item.id} hasCover={item.hasCover} size={48} />
@@ -141,8 +144,8 @@ export default function FolderScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  retryButton: { backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
-  retryText: { color: '#fff', fontSize: 14 },
+  retryButton: { paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
+  retryText: { fontSize: 14 },
   actions: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12, gap: 12, borderBottomWidth: StyleSheet.hairlineWidth },
   actionButton: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
   actionButtonInner: { flexDirection: 'row', alignItems: 'center', gap: 8 },

@@ -1,6 +1,6 @@
 {
   "name": "streamsound-app",
-  "version": "0.2.0-alpha.6",
+  "version": "0.2.0-alpha.10",
   "private": true,
   "scripts": {
     "android": "react-native run-android",

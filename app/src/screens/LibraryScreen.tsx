@@ -63,9 +63,9 @@ export default function LibraryScreen() {
   if (error) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <Text style={{ color: '#ff4444', fontSize: 16, marginBottom: 16 }}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchFolders}>
-          <Text style={styles.retryText}>重试</Text>
+        <Text style={{ color: colors.error, fontSize: 16, marginBottom: 16 }}>{error}</Text>
+        <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.buttonPrimary }]} onPress={fetchFolders}>
+          <Text style={[styles.retryText, { color: colors.buttonText }]}>重试</Text>
         </TouchableOpacity>
       </View>
     );
@@ -76,26 +76,26 @@ export default function LibraryScreen() {
       {/* Quick actions */}
       <View style={[styles.quickActions, { borderBottomColor: colors.border }]}>
         <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Search')}>
-          <View style={[styles.actionIconCircle, { backgroundColor: colors.accent }]}>
-            <SearchIcon size={20} color="#fff" />
+          <View style={[styles.actionIconCircle, { backgroundColor: colors.actionSearch }]}>
+            <SearchIcon size={20} color={colors.actionIconText} />
           </View>
           <Text style={[styles.actionText, { color: colors.textSecondary }]}>搜索</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Favorites')}>
-          <View style={[styles.actionIconCircle, { backgroundColor: '#e74c3c' }]}>
-            <HeartFilledIcon size={20} color="#fff" />
+          <View style={[styles.actionIconCircle, { backgroundColor: colors.actionFavorites }]}>
+            <HeartFilledIcon size={20} color={colors.actionIconText} />
           </View>
           <Text style={[styles.actionText, { color: colors.textSecondary }]}>收藏</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('History')}>
-          <View style={[styles.actionIconCircle, { backgroundColor: '#3498db' }]}>
-            <ClockIcon size={20} color="#fff" />
+          <View style={[styles.actionIconCircle, { backgroundColor: colors.actionHistory }]}>
+            <ClockIcon size={20} color={colors.actionIconText} />
           </View>
           <Text style={[styles.actionText, { color: colors.textSecondary }]}>最近</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Settings')}>
-          <View style={[styles.actionIconCircle, { backgroundColor: '#666' }]}>
-            <SettingsIcon size={20} color="#fff" />
+          <View style={[styles.actionIconCircle, { backgroundColor: colors.actionSettings }]}>
+            <SettingsIcon size={20} color={colors.actionIconText} />
           </View>
           <Text style={[styles.actionText, { color: colors.textSecondary }]}>设置</Text>
         </TouchableOpacity>
@@ -136,8 +136,8 @@ export default function LibraryScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  retryButton: { backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
-  retryText: { color: '#fff', fontSize: 14 },
+  retryButton: { paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
+  retryText: { fontSize: 14 },
   quickActions: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 20, paddingHorizontal: 16, borderBottomWidth: 1 },
   actionButton: { alignItems: 'center', gap: 8 },
   actionIconCircle: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },

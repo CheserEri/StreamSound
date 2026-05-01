@@ -1,52 +1,50 @@
 /**
- * 歌曲列表项组件
- * 用于在列表中显示单首歌曲信息
+ * Memoized track list item
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useSettingsStore } from '../store';
+import { getColors } from '../theme/colors';
 import CoverImage from './CoverImage';
 import { formatDuration } from '../utils/format';
 import type { TrackListItem } from '../types';
 
-/**
- * 歌曲列表项属性接口
- */
 interface TrackItemProps {
-  /** 歌曲信息 */
   track: TrackListItem;
-  /** 是否为当前播放歌曲 */
   isActive?: boolean;
-  /** 点击回调 */
   onPress: () => void;
 }
 
-/**
- * 歌曲列表项组件
- */
 export default React.memo(function TrackItem({ track, isActive, onPress }: TrackItemProps) {
+  const theme = useSettingsStore((s) => s.theme);
+  const colors = useMemo(() => getColors(theme), [theme]);
+
   return (
     <TouchableOpacity
-      style={[styles.container, isActive && styles.containerActive]}
+      style={[
+        styles.container,
+        isActive && { backgroundColor: colors.activeBg, borderLeftWidth: 3, borderLeftColor: colors.accent },
+      ]}
       onPress={onPress}
+      activeOpacity={0.7}
     >
-      {/* 封面图片 */}
       <CoverImage trackId={track.id} hasCover={track.hasCover} size={48} />
 
-      {/* 歌曲信息 */}
       <View style={styles.info}>
         <Text
-          style={[styles.title, isActive && styles.titleActive]}
+          style={[styles.title, { color: isActive ? colors.activeText : colors.text }]}
           numberOfLines={1}
         >
           {track.title}
         </Text>
-        <Text style={styles.artist} numberOfLines={1}>
+        <Text style={[styles.artist, { color: colors.textSecondary }]} numberOfLines={1}>
           {track.artist || '未知艺术家'}
         </Text>
       </View>
 
-      {/* 时长 */}
-      <Text style={styles.duration}>{formatDuration(track.duration)}</Text>
+      <Text style={[styles.duration, { color: colors.textMuted }]}>
+        {formatDuration(track.duration)}
+      </Text>
     </TouchableOpacity>
   );
 });
@@ -58,42 +56,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
-  containerActive: {
-    backgroundColor: '#1e1e1e',
-  },
-  cover: {
-    width: 48,
-    height: 48,
-    borderRadius: 6,
-  },
-  coverPlaceholder: {
-    backgroundColor: '#2a2a2a',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  coverText: {
-    fontSize: 20,
-    color: '#666',
-  },
   info: {
     flex: 1,
     marginLeft: 12,
   },
   title: {
-    color: '#fff',
     fontSize: 15,
     fontWeight: '500',
   },
-  titleActive: {
-    color: '#2563eb',
-  },
   artist: {
-    color: '#888',
     fontSize: 13,
     marginTop: 2,
   },
   duration: {
-    color: '#666',
     fontSize: 13,
     marginLeft: 8,
   },

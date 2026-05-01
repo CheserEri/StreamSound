@@ -2,6 +2,23 @@
 
 All notable changes to StreamSound are documented in this file.
 
+## [0.2.0-alpha.10] - 2026-05-02
+
+### Changed
+- **UI 重构**: 参考 Spotify 设计理念（沉浸感 + 极简 + 音乐优先），全应用前端系统性优化
+- **主题系统重构**: 颜色 Token 从 20 个扩展到 50+ 个，覆盖播放器、歌词、唱片、滑块等全部场景；新增 `getPlayerGradient()` 提供 8 套深色氛围渐变色板；消除全代码库硬编码颜色
+- **播放页重设计**: 动态渐变背景（8 套色板按曲目自动切换）+ 模糊专辑封面氛围层（`blurRadius` + 暗色遮罩）+ 无封面回退渐变 + 触觉反馈
+- **GlowSlider**: 新增真实发光效果（进度条光晕 + 拖拽滑块发光动画）
+- **DiscCover**: 唱片外环阴影 + 黑胶刻纹纹理（同心圆细线）
+- **LyricsView**: 当前行文字阴影增强视觉焦点
+- **MiniPlayer**: 进度条主题 Token + 封面阴影层次
+- **AnimatedPlayButton**: 新增 `backgroundColor` 属性，发光阴影跟随背景色
+- **列表页统一**: FolderScreen 当前曲目左侧强调色边框；FavoritesScreen/HistoryScreen 空状态图标 + 当前播放高亮；全部错误/重试按钮改用主题 Token
+- **AnimatedHeartButton**: 集成主题系统（红色心形通过 Token 保持）
+- **CoverImage**: 加载指示器颜色改用主题 Token
+- **RootNavigator**: PlayerScreen 模态动画改为 `slide_from_bottom`
+- 15 个文件修改，+507 行，-328 行
+
 ## [0.2.0-alpha.6] - 2026-04-30
 
 ### Fixed

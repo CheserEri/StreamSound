@@ -1,20 +1,18 @@
 /**
- * 收藏动画按钮
- * 使用 reanimated 实现弹性缩放 + 旋转动画
- * 参考 Instagram 点赞效果
+ * Animated heart/favorite button with spring + rotation effects
  */
-import React, { useCallback, useState, useEffect } from 'react';
-import { Pressable, StyleSheet, Alert } from 'react-native';
+import React, { useCallback, useState, useEffect, useMemo } from 'react';
+import { Pressable, Alert } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withSequence,
   withTiming,
-  interpolate,
-  withDelay,
 } from 'react-native-reanimated';
 import { HeartOutlineIcon, HeartFilledIcon } from './icons';
+import { useSettingsStore } from '../store';
+import { getColors } from '../theme/colors';
 import api from '../services/api';
 
 interface AnimatedHeartButtonProps {
@@ -32,6 +30,8 @@ export default function AnimatedHeartButton({
 }: AnimatedHeartButtonProps) {
   const [isFavorited, setIsFavorited] = useState(initialFavorited);
   const [isLoading, setIsLoading] = useState(false);
+  const theme = useSettingsStore((s) => s.theme);
+  const colors = useMemo(() => getColors(theme), [theme]);
 
   const scale = useSharedValue(1);
   const rotation = useSharedValue(0);
@@ -54,7 +54,6 @@ export default function AnimatedHeartButton({
     setIsFavorited(newState);
     setIsLoading(true);
 
-    // Bouncy heart animation
     if (newState) {
       scale.value = withSequence(
         withTiming(0.5, { duration: 80 }),
@@ -93,9 +92,9 @@ export default function AnimatedHeartButton({
     <Pressable onPress={handlePress} disabled={isLoading} hitSlop={12}>
       <Animated.View style={animatedStyle}>
         {isFavorited ? (
-          <HeartFilledIcon size={size} color="#ff4757" />
+          <HeartFilledIcon size={size} color={colors.heartFilled} />
         ) : (
-          <HeartOutlineIcon size={size} color="#aaa" />
+          <HeartOutlineIcon size={size} color={colors.heartOutline} />
         )}
       </Animated.View>
     </Pressable>

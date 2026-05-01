@@ -55,7 +55,7 @@ export default function RootNavigator() {
             <Stack.Screen
               name="Player"
               component={PlayerScreen}
-              options={{ headerShown: false, presentation: 'modal' }}
+              options={{ headerShown: false, presentation: 'modal', animation: 'slide_from_bottom' }}
             />
             <Stack.Screen
               name="Queue"

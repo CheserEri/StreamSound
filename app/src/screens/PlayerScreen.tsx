@@ -1,17 +1,18 @@
 /**
- * 播放器主屏幕 - 网易云音乐风格
+ * Player screen - Spotify-inspired immersive design
  *
- * 布局:
- *  - 顶部: 折叠按钮 + 标题 + 播放列表按钮
- *  - 中间: 水平滑动页面 (左侧=专辑页, 右侧=歌词页)
- *  - 底部: 歌曲信息 + 进度条 + 控制按钮
+ * Layout:
+ *  - Top: collapse button + title + queue button
+ *  - Middle: horizontal pager (album cover / lyrics)
+ *  - Bottom: track info + progress + controls
  *
- * 左右滑动切换专辑/歌词，参考网易云音乐逻辑
+ * Dynamic gradient + blurred album art atmosphere
  */
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
+  Image,
   TouchableOpacity,
   StyleSheet,
   Dimensions,
@@ -21,12 +22,14 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { usePlayer } from '../hooks/usePlayer';
 import { useSettingsStore } from '../store';
+import { getColors, getPlayerGradient } from '../theme/colors';
 import api from '../services/api';
+import { getCoverUrl } from '../services/player';
 import { getCachedLyrics, setCachedLyrics } from '../services/storage';
 import type { RootStackParamList, TrackDetail } from '../types';
-import CoverImage from '../components/CoverImage';
 import LyricsView from '../components/LyricsView';
 import DiscCover from '../components/DiscCover';
 import AnimatedPlayButton from '../components/AnimatedPlayButton';
@@ -41,11 +44,17 @@ import {
   ShuffleIcon,
   RepeatIcon,
   RepeatOneIcon,
+  MusicNoteIcon,
 } from '../components/icons';
 import { formatProgress } from '../utils/format';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COVER_SIZE = SCREEN_WIDTH * 0.68;
+
+const hapticOptions = {
+  enableVibrateFallback: true,
+  ignoreAndroidSystemSettings: false,
+};
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Player'>;
 
@@ -66,18 +75,29 @@ export default function PlayerScreen() {
     seekTo,
     toggleMode,
   } = usePlayer();
-  const { lyricsSize } = useSettingsStore();
+  const { lyricsSize, theme } = useSettingsStore();
+  const colors = useMemo(() => getColors(theme), [theme]);
 
   const [trackDetail, setTrackDetail] = useState<TrackDetail | null>(null);
-  const [currentPage, setCurrentPage] = useState(0); // 0=album, 1=lyrics
+  const [currentPage, setCurrentPage] = useState(0);
+  const [coverLoaded, setCoverLoaded] = useState(false);
 
+  // Dynamic gradient based on track
+  const gradientColors = useMemo(() => {
+    if (!currentTrack) return colors.playerGradientDefault;
+    return getPlayerGradient(currentTrack.id);
+  }, [currentTrack?.id]);
+
+  // Fetch track details + lyrics
   useEffect(() => {
     if (!currentTrack) {
       setTrackDetail(null);
+      setCoverLoaded(false);
       return;
     }
 
-    // Show cached lyrics immediately
+    setCoverLoaded(false);
+
     const cached = getCachedLyrics(currentTrack.id);
     if (cached) {
       setTrackDetail({
@@ -93,7 +113,6 @@ export default function PlayerScreen() {
       setTrackDetail(null);
     }
 
-    // Fetch fresh data from API
     const controller = new AbortController();
     api.get(`/library/tracks/${currentTrack.id}`, { signal: controller.signal })
       .then((res) => {
@@ -107,31 +126,42 @@ export default function PlayerScreen() {
     return () => { controller.abort(); };
   }, [currentTrack?.id]);
 
-  /**
-   * 处理水平滚动，判断当前页面
-   */
   const handleScroll = useCallback((event: any) => {
     const offsetX = event.nativeEvent.contentOffset.x;
-    const page = Math.round(offsetX / SCREEN_WIDTH);
+    setCurrentPage(Math.round(offsetX / SCREEN_WIDTH));
+  }, []);
+
+  const scrollToPage = useCallback((page: number) => {
+    scrollViewRef.current?.scrollTo({ x: page * SCREEN_WIDTH, animated: true });
     setCurrentPage(page);
   }, []);
 
-  /**
-   * 跳转到指定页面
-   */
-  const scrollToPage = useCallback((page: number) => {
-    scrollViewRef.current?.scrollTo({
-      x: page * SCREEN_WIDTH,
-      animated: true,
-    });
-    setCurrentPage(page);
+  const triggerHaptic = useCallback(() => {
+    ReactNativeHapticFeedback.trigger('impactLight', hapticOptions);
   }, []);
+
+  const handlePlayPause = useCallback(() => {
+    triggerHaptic();
+    if (isPlaying) pause();
+    else play();
+  }, [isPlaying, pause, play, triggerHaptic]);
+
+  const handleSkipNext = useCallback(() => {
+    triggerHaptic();
+    skipToNext();
+  }, [skipToNext, triggerHaptic]);
+
+  const handleSkipPrevious = useCallback(() => {
+    triggerHaptic();
+    skipToPrevious();
+  }, [skipToPrevious, triggerHaptic]);
 
   if (!currentTrack) {
     return (
-      <GradientBackground>
+      <GradientBackground colors={colors.playerGradientDefault}>
         <View style={styles.center}>
-          <Text style={styles.noTrackText}>未在播放</Text>
+          <MusicNoteIcon size={48} color={colors.textMuted} />
+          <Text style={[styles.noTrackText, { color: colors.textMuted }]}>未在播放</Text>
         </View>
       </GradientBackground>
     );
@@ -139,15 +169,30 @@ export default function PlayerScreen() {
 
   const getModeIconComponent = () => {
     switch (mode) {
-      case 'shuffle': return <ShuffleIcon size={20} color="#aaa" />;
-      case 'repeat': return <RepeatOneIcon size={20} color="#1db954" />;
-      default: return <RepeatIcon size={20} color="#aaa" />;
+      case 'shuffle': return <ShuffleIcon size={20} color={colors.textMuted} />;
+      case 'repeat': return <RepeatOneIcon size={20} color={colors.accent} />;
+      default: return <RepeatIcon size={20} color={colors.textMuted} />;
     }
   };
 
+  const coverUrl = getCoverUrl(currentTrack.id);
+
   return (
     <GestureHandlerRootView style={styles.flex}>
-      <GradientBackground colors={['#1a1a2e', '#121218', '#0a0a12']}>
+      <GradientBackground colors={gradientColors}>
+        {/* Blurred album art atmosphere */}
+        {currentTrack.hasCover && (
+          <View style={styles.atmosphereLayer} pointerEvents="none">
+            <Image
+              source={{ uri: coverUrl }}
+              style={styles.atmosphereImage}
+              blurRadius={80}
+              resizeMode="cover"
+            />
+            <View style={styles.atmosphereOverlay} />
+          </View>
+        )}
+
         {/* Header */}
         <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
           <TouchableOpacity
@@ -155,11 +200,11 @@ export default function PlayerScreen() {
             style={styles.headerButton}
             hitSlop={12}
           >
-            <ChevronDownIcon size={28} color="#fff" />
+            <ChevronDownIcon size={28} color={colors.playerText} />
           </TouchableOpacity>
 
           <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle}>正在播放</Text>
+            <Text style={[styles.headerTitle, { color: colors.playerHeaderSubtitle }]}>正在播放</Text>
           </View>
 
           <TouchableOpacity
@@ -167,7 +212,7 @@ export default function PlayerScreen() {
             style={styles.headerButton}
             hitSlop={12}
           >
-            <QueueIcon size={22} color="#fff" />
+            <QueueIcon size={22} color={colors.playerText} />
           </TouchableOpacity>
         </View>
 
@@ -175,11 +220,19 @@ export default function PlayerScreen() {
         <View style={styles.pageIndicator}>
           <TouchableOpacity
             onPress={() => scrollToPage(0)}
-            style={[styles.dot, currentPage === 0 && styles.dotActive]}
+            style={[
+              styles.dot,
+              { backgroundColor: colors.playerDot },
+              currentPage === 0 && [styles.dotActive, { backgroundColor: colors.playerDotActive }],
+            ]}
           />
           <TouchableOpacity
             onPress={() => scrollToPage(1)}
-            style={[styles.dot, currentPage === 1 && styles.dotActive]}
+            style={[
+              styles.dot,
+              { backgroundColor: colors.playerDot },
+              currentPage === 1 && [styles.dotActive, { backgroundColor: colors.playerDotActive }],
+            ]}
           />
         </View>
 
@@ -220,10 +273,10 @@ export default function PlayerScreen() {
         <View style={styles.trackInfo}>
           <View style={styles.trackInfoRow}>
             <View style={styles.trackInfoText}>
-              <Text style={styles.trackTitle} numberOfLines={1}>
+              <Text style={[styles.trackTitle, { color: colors.playerText }]} numberOfLines={1}>
                 {currentTrack.title}
               </Text>
-              <Text style={styles.trackArtist} numberOfLines={1}>
+              <Text style={[styles.trackArtist, { color: colors.playerTextSecondary }]} numberOfLines={1}>
                 {currentTrack.artist || '未知艺术家'}
               </Text>
             </View>
@@ -241,19 +294,24 @@ export default function PlayerScreen() {
             value={progress}
             maximumValue={duration || currentTrack.duration || 1}
             onSeek={seekTo}
-            activeColor="#fff"
-            inactiveColor="#333"
+            activeColor={colors.sliderActive}
+            inactiveColor={colors.sliderInactive}
+            glowColor={colors.sliderGlow}
           />
           <View style={styles.timeRow}>
-            <Text style={styles.timeText}>{formatProgress(progress)}</Text>
-            <Text style={styles.timeText}>{formatProgress(duration || currentTrack.duration || 0)}</Text>
+            <Text style={[styles.timeText, { color: colors.playerTextMuted }]}>
+              {formatProgress(progress)}
+            </Text>
+            <Text style={[styles.timeText, { color: colors.playerTextMuted }]}>
+              {formatProgress(duration || currentTrack.duration || 0)}
+            </Text>
           </View>
         </View>
 
         {/* Controls */}
         <View style={[styles.controls, { paddingBottom: insets.bottom + 16 }]}>
           <TouchableOpacity
-            onPress={toggleMode}
+            onPress={() => { triggerHaptic(); toggleMode(); }}
             style={styles.modeButton}
             hitSlop={8}
           >
@@ -261,25 +319,27 @@ export default function PlayerScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={skipToPrevious}
+            onPress={handleSkipPrevious}
             style={styles.controlButton}
             hitSlop={8}
           >
-            <SkipPreviousIcon size={32} color="#fff" />
+            <SkipPreviousIcon size={32} color={colors.playerText} />
           </TouchableOpacity>
 
           <AnimatedPlayButton
             isPlaying={isPlaying}
-            onPress={isPlaying ? pause : play}
+            onPress={handlePlayPause}
             size={72}
+            color={colors.playerText}
+            backgroundColor={colors.playerText}
           />
 
           <TouchableOpacity
-            onPress={skipToNext}
+            onPress={handleSkipNext}
             style={styles.controlButton}
             hitSlop={8}
           >
-            <SkipNextIcon size={32} color="#fff" />
+            <SkipNextIcon size={32} color={colors.playerText} />
           </TouchableOpacity>
 
           <View style={styles.modeButton} />
@@ -297,17 +357,33 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 12,
   },
   noTrackText: {
-    color: '#555',
     fontSize: 16,
   },
+  // Atmosphere
+  atmosphereLayer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 0,
+  },
+  atmosphereImage: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.25,
+    transform: [{ scale: 2.5 }],
+  },
+  atmosphereOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingBottom: 4,
+    zIndex: 1,
   },
   headerButton: {
     width: 44,
@@ -320,33 +396,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    color: '#aaa',
     fontSize: 13,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 1.5,
   },
-  // Page indicator dots
+  // Page indicator
   pageIndicator: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 8,
     gap: 8,
+    zIndex: 1,
   },
   dot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#555',
   },
   dotActive: {
     width: 18,
-    backgroundColor: '#fff',
   },
-  // Horizontal pager
+  // Pager
   pager: {
     flex: 1,
+    zIndex: 1,
   },
   page: {
     width: SCREEN_WIDTH,
@@ -367,6 +442,7 @@ const styles = StyleSheet.create({
   trackInfo: {
     paddingHorizontal: 32,
     paddingVertical: 12,
+    zIndex: 1,
   },
   trackInfoRow: {
     flexDirection: 'row',
@@ -378,13 +454,11 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   trackTitle: {
-    color: '#fff',
     fontSize: 20,
     fontWeight: '700',
     letterSpacing: 0.3,
   },
   trackArtist: {
-    color: '#888',
     fontSize: 14,
     marginTop: 4,
     fontWeight: '400',
@@ -392,6 +466,7 @@ const styles = StyleSheet.create({
   // Progress
   progressContainer: {
     paddingTop: 4,
+    zIndex: 1,
   },
   timeRow: {
     flexDirection: 'row',
@@ -400,7 +475,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   timeText: {
-    color: '#777',
     fontSize: 11,
     fontVariant: ['tabular-nums'],
   },
@@ -411,6 +485,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 24,
     gap: 20,
+    zIndex: 1,
   },
   controlButton: {
     width: 48,
