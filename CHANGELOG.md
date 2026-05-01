@@ -2,6 +2,17 @@
 
 All notable changes to StreamSound are documented in this file.
 
+## [0.2.0-alpha.11] - 2026-05-02
+
+### Fixed
+- 修复播放进度条不随音乐播放移动、歌词不随播放滚动的根本问题
+- **根因**: `playerStore.ts` 在事件回调中调用 `usePlayerStore()`（React Hook），违反 React 规则导致状态更新链断裂
+- **修复方案**: 移除不可靠的 `Event.PlaybackProgressUpdated` 事件监听，改用 `setInterval` + `TrackPlayer.getProgress()` 每 250ms 轮询进度
+- 播放时启动轮询，暂停时停止轮询（节省性能）
+- `Event.PlaybackState` 监听器中修复 `usePlayerStore()` 调用为 `get()` + `set()`
+- 保留 `Event.PlaybackActiveTrackChanged` 和 `Event.PlaybackPlayWhenReadyChanged` 事件监听（可靠）
+- 恢复播放场景自动检测并启动轮询
+
 ## [0.2.0-alpha.10] - 2026-05-02
 
 ### Changed
