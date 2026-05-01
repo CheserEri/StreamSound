@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore, useSettingsStore } from '../store';
 import { getColors } from '../theme/colors';
@@ -8,6 +9,7 @@ export default function SettingsScreen() {
   const { user, logout } = useAuthStore();
   const { serverUrl, lyricsSize, theme, setServerUrl, setLyricsSize, setTheme } = useSettingsStore();
   const colors = useMemo(() => getColors(theme), [theme]);
+  const insets = useSafeAreaInsets();
   const [editServerUrl, setEditServerUrl] = useState(serverUrl);
   const navigation = useNavigation();
 
@@ -23,7 +25,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={{ paddingBottom: insets.bottom }}>
       {/* User info */}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>账号</Text>
