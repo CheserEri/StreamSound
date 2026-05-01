@@ -2,6 +2,11 @@
 
 All notable changes to StreamSound are documented in this file.
 
+## [0.2.0-alpha.14] - 2026-05-02
+
+### Reverted
+- 撤回 FLAC seek 修复和唱片背景封面联动改动
+
 ## [0.2.0-alpha.13] - 2026-05-02
 
 ### Fixed
