@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePlayerActions } from '../hooks/usePlayer';
 import { usePlayerStore, useSettingsStore } from '../store';
 import { getColors } from '../theme/colors';
@@ -17,7 +16,6 @@ export default function QueueScreen() {
   const mode = usePlayerStore((s) => s.mode);
   const theme = useSettingsStore((s) => s.theme);
   const colors = useMemo(() => getColors(theme), [theme]);
-  const insets = useSafeAreaInsets();
   const [editMode, setEditMode] = useState(false);
 
   const handleTrackPress = (index: number) => { if (queue.length > 0) playTracks(queue, index); };
@@ -109,7 +107,7 @@ export default function QueueScreen() {
             </TouchableOpacity>
           );
         }}
-        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom }]}
+        contentContainerStyle={styles.list}
       />
     </View>
   );

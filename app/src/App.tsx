@@ -16,8 +16,7 @@ export default function App() {
     <>
       <StatusBar
         barStyle={theme === 'dark' ? 'light-content' : 'dark-content'}
-        backgroundColor="transparent"
-        translucent
+        backgroundColor={theme === 'dark' ? '#121212' : '#fff'}
       />
       <RootNavigator />
     </>
