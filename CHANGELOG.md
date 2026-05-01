@@ -2,6 +2,19 @@
 
 All notable changes to StreamSound are documented in this file.
 
+## [0.2.0-alpha.13] - 2026-05-02
+
+### Fixed
+- 修复进度条无法拖拽控制播放进度的问题：`Gesture.Pan().activeOffsetX([-10,10])` 与父级水平 ScrollView 手势冲突，改为 `activeOffsetX(0)` + `Gesture.Tap()` 组合，Pan 优先于 Tap 和 ScrollView
+- 进度条 fill 和 thumb 改为 `useAnimatedStyle` 驱动，拖拽时实时跟随手指位置（UI 线程动画，无 JS 线程瓶颈）
+
+### Changed
+- **播放页背景氛围增强**: 模糊专辑封面效果从不可见调整为明显沉浸感
+  - `blurRadius`: 80 → 30（更清晰的封面轮廓）
+  - `opacity`: 0.25 → 0.4（更明显的封面色彩）
+  - `scale`: 2.5 → 1.3（合理的放大倍率）
+  - 暗色遮罩: `rgba(0,0,0,0.5)` → `rgba(0,0,0,0.35)`（更多封面色彩透出）
+
 ## [0.2.0-alpha.12] - 2026-05-02
 
 ### Reverted

@@ -1,10 +1,10 @@
 /**
  * Custom progress slider with glow effects
- * - Gesture-based pan for seeking
+ * - Tap to seek, pan to drag
  * - Glowing track fill and thumb
  * - Smooth reanimated animations
  */
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -37,61 +37,82 @@ export default function GlowSlider({
   inactiveColor = '#333',
   glowColor,
 }: GlowSliderProps) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragX, setDragX] = useState(0);
-
+  const isDragging = useSharedValue(false);
+  const dragProgress = useSharedValue(0);
   const thumbScale = useSharedValue(1);
   const glowOpacity = useSharedValue(0);
 
   const resolvedGlowColor = glowColor || activeColor;
 
-  const displayRatio = isDragging
-    ? Math.max(0, Math.min(dragX / SLIDER_WIDTH, 1))
-    : maximumValue > 0
-      ? Math.min(value / maximumValue, 1)
-      : 0;
-  const fillWidth = displayRatio * SLIDER_WIDTH;
-
-  const handleDragStart = useCallback((x: number) => {
-    setIsDragging(true);
-    setDragX(Math.max(0, Math.min(x, SLIDER_WIDTH)));
-    thumbScale.value = withSpring(1.3, { damping: 12, stiffness: 300 });
-    glowOpacity.value = withSpring(1, { damping: 15, stiffness: 200 });
-  }, []);
-
-  const handleDragUpdate = useCallback((x: number) => {
-    setDragX(Math.max(0, Math.min(x, SLIDER_WIDTH)));
-  }, []);
-
-  const handleDragEnd = useCallback(
+  const seekToPosition = useCallback(
     (x: number) => {
-      setIsDragging(false);
       const clampedX = Math.max(0, Math.min(x, SLIDER_WIDTH));
       const newValue = (clampedX / SLIDER_WIDTH) * maximumValue;
       onSeek(newValue);
-      thumbScale.value = withSpring(1, { damping: 12, stiffness: 300 });
-      glowOpacity.value = withSpring(0, { damping: 15, stiffness: 200 });
     },
     [maximumValue, onSeek],
   );
 
+  const handleDragStart = useCallback(
+    (x: number) => {
+      'worklet';
+      isDragging.value = true;
+      const clampedX = Math.max(0, Math.min(x, SLIDER_WIDTH));
+      dragProgress.value = clampedX / SLIDER_WIDTH;
+      thumbScale.value = withSpring(1.3, { damping: 12, stiffness: 300 });
+      glowOpacity.value = withSpring(1, { damping: 15, stiffness: 200 });
+    },
+    [],
+  );
+
+  const handleDragUpdate = useCallback((x: number) => {
+    'worklet';
+    const clampedX = Math.max(0, Math.min(x, SLIDER_WIDTH));
+    dragProgress.value = clampedX / SLIDER_WIDTH;
+  }, []);
+
+  const handleDragEnd = useCallback(
+    (x: number) => {
+      'worklet';
+      isDragging.value = false;
+      const clampedX = Math.max(0, Math.min(x, SLIDER_WIDTH));
+      dragProgress.value = clampedX / SLIDER_WIDTH;
+      thumbScale.value = withSpring(1, { damping: 12, stiffness: 300 });
+      glowOpacity.value = withSpring(0, { damping: 15, stiffness: 200 });
+      runOnJS(seekToPosition)(clampedX);
+    },
+    [seekToPosition],
+  );
+
+  // Tap gesture: immediately seek to tapped position
+  const tapGesture = Gesture.Tap().onEnd((e) => {
+    const sliderLeft = (SCREEN_WIDTH - SLIDER_WIDTH) / 2;
+    const relX = e.absoluteX - sliderLeft;
+    runOnJS(seekToPosition)(relX);
+  });
+
+  // Pan gesture: drag to seek (activeOffsetX(0) so it activates immediately,
+  // which wins over the parent ScrollView's horizontal pan)
   const panGesture = Gesture.Pan()
-    .activeOffsetX([-10, 10])
+    .activeOffsetX(0)
     .onBegin((e) => {
       const sliderLeft = (SCREEN_WIDTH - SLIDER_WIDTH) / 2;
       const relX = e.absoluteX - sliderLeft;
-      runOnJS(handleDragStart)(relX);
+      handleDragStart(relX);
     })
     .onUpdate((e) => {
       const sliderLeft = (SCREEN_WIDTH - SLIDER_WIDTH) / 2;
       const relX = e.absoluteX - sliderLeft;
-      runOnJS(handleDragUpdate)(relX);
+      handleDragUpdate(relX);
     })
     .onEnd((e) => {
       const sliderLeft = (SCREEN_WIDTH - SLIDER_WIDTH) / 2;
       const relX = e.absoluteX - sliderLeft;
-      runOnJS(handleDragEnd)(relX);
+      handleDragEnd(relX);
     });
+
+  // Pan takes priority over tap
+  const composed = Gesture.Exclusive(panGesture, tapGesture);
 
   const thumbAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: thumbScale.value }],
@@ -102,33 +123,61 @@ export default function GlowSlider({
     transform: [{ scale: thumbScale.value }],
   }));
 
+  // Animated fill width: follow drag position during drag, otherwise follow value
+  const fillAnimatedStyle = useAnimatedStyle(() => {
+    const ratio = isDragging.value
+      ? dragProgress.value
+      : maximumValue > 0
+        ? Math.min(value / maximumValue, 1)
+        : 0;
+    return { width: ratio * SLIDER_WIDTH };
+  });
+
+  const thumbPositionStyle = useAnimatedStyle(() => {
+    const ratio = isDragging.value
+      ? dragProgress.value
+      : maximumValue > 0
+        ? Math.min(value / maximumValue, 1)
+        : 0;
+    return { left: Math.max(0, ratio * SLIDER_WIDTH - THUMB_SIZE / 2) };
+  });
+
+  const thumbGlowPositionStyle = useAnimatedStyle(() => {
+    const ratio = isDragging.value
+      ? dragProgress.value
+      : maximumValue > 0
+        ? Math.min(value / maximumValue, 1)
+        : 0;
+    return { left: Math.max(0, ratio * SLIDER_WIDTH - THUMB_SIZE * 1.25) };
+  });
+
   return (
     <View style={styles.container}>
-      <GestureDetector gesture={panGesture}>
+      <GestureDetector gesture={composed}>
         <View style={styles.trackArea}>
           {/* Background track */}
           <View style={[styles.track, { backgroundColor: inactiveColor }]} />
 
           {/* Glow layer behind active fill */}
-          <View
+          <Animated.View
             style={[
               styles.trackGlow,
               {
-                width: fillWidth,
                 backgroundColor: resolvedGlowColor,
               },
+              fillAnimatedStyle,
             ]}
           />
 
           {/* Active fill */}
-          <View
+          <Animated.View
             style={[
               styles.track,
               styles.trackActive,
               {
-                width: fillWidth,
                 backgroundColor: activeColor,
               },
+              fillAnimatedStyle,
             ]}
           />
 
@@ -137,9 +186,9 @@ export default function GlowSlider({
             style={[
               styles.thumbGlow,
               {
-                left: Math.max(0, fillWidth - THUMB_SIZE * 1.25),
                 backgroundColor: resolvedGlowColor,
               },
+              thumbGlowPositionStyle,
               glowAnimatedStyle,
             ]}
           />
@@ -149,9 +198,9 @@ export default function GlowSlider({
             style={[
               styles.thumb,
               {
-                left: Math.max(0, fillWidth - THUMB_SIZE / 2),
                 backgroundColor: activeColor,
               },
+              thumbPositionStyle,
               thumbAnimatedStyle,
             ]}
           />
