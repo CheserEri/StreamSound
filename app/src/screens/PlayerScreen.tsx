@@ -186,7 +186,7 @@ export default function PlayerScreen() {
             <Image
               source={{ uri: coverUrl }}
               style={styles.atmosphereImage}
-              blurRadius={80}
+              blurRadius={30}
               resizeMode="cover"
             />
             <View style={styles.atmosphereOverlay} />
@@ -369,12 +369,12 @@ const styles = StyleSheet.create({
   },
   atmosphereImage: {
     ...StyleSheet.absoluteFillObject,
-    opacity: 0.25,
-    transform: [{ scale: 2.5 }],
+    opacity: 0.4,
+    transform: [{ scale: 1.3 }],
   },
   atmosphereOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
   },
   // Header
   header: {
