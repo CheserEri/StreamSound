@@ -36,3 +36,12 @@ app/android/app/build/
 app/android/build/
 app/android/.gradle/
 app/android/app/.gradle/
+
+# Firecrawl
+.firecrawl/
+
+# Backup files
+*.bak
+
+# Web build output
+web/dist/
