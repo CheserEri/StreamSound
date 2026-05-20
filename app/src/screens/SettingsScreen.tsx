@@ -1,15 +1,43 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import React, { useEffect, useState, useMemo } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Switch } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore, useSettingsStore } from '../store';
 import { getColors } from '../theme/colors';
+import { getAudioCacheUsageBytes } from '../services/audioCache';
 
 export default function SettingsScreen() {
   const { user, logout } = useAuthStore();
-  const { serverUrl, lyricsSize, theme, setServerUrl, setLyricsSize, setTheme } = useSettingsStore();
+  const {
+    serverUrl,
+    lyricsSize,
+    theme,
+    audioCacheEnabled,
+    audioCacheMaxMb,
+    setServerUrl,
+    setLyricsSize,
+    setTheme,
+    setAudioCacheEnabled,
+    setAudioCacheMaxMb,
+  } = useSettingsStore();
   const colors = useMemo(() => getColors(theme), [theme]);
   const [editServerUrl, setEditServerUrl] = useState(serverUrl);
+  const [editCacheMaxMb, setEditCacheMaxMb] = useState(String(audioCacheMaxMb));
+  const [cacheUsageMb, setCacheUsageMb] = useState(0);
   const navigation = useNavigation();
+
+  useEffect(() => {
+    setEditCacheMaxMb(String(audioCacheMaxMb));
+  }, [audioCacheMaxMb]);
+
+  useEffect(() => {
+    let mounted = true;
+    getAudioCacheUsageBytes().then((bytes) => {
+      if (mounted) setCacheUsageMb(bytes / 1024 / 1024);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [audioCacheEnabled, audioCacheMaxMb]);
 
   const handleSaveServerUrl = () => {
     if (editServerUrl.trim()) { setServerUrl(editServerUrl.trim()); Alert.alert('提示', '服务器地址已更新'); }
@@ -20,6 +48,16 @@ export default function SettingsScreen() {
       { text: '取消', style: 'cancel' },
       { text: '退出', style: 'destructive', onPress: logout },
     ]);
+  };
+
+  const handleSaveCacheMaxMb = () => {
+    const value = Number(editCacheMaxMb);
+    if (!Number.isFinite(value) || value <= 0) {
+      Alert.alert('提示', '请输入有效的缓存空间大小');
+      return;
+    }
+    setAudioCacheMaxMb(value);
+    Alert.alert('提示', '音乐缓存空间已更新');
   };
 
   return (
@@ -87,6 +125,54 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             ))}
           </View>
+
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+          <View style={styles.switchRow}>
+            <View style={styles.switchText}>
+              <Text style={[styles.settingTitle, { color: colors.text }]}>缓存音乐</Text>
+              <Text style={[styles.settingHint, { color: colors.textMuted }]}>
+                播放过的歌曲会在后台保存，超过容量后自动删除最久未使用的歌曲
+              </Text>
+            </View>
+            <Switch
+              value={audioCacheEnabled}
+              onValueChange={setAudioCacheEnabled}
+              trackColor={{ false: colors.inputBg, true: colors.accent }}
+              thumbColor="#ffffff"
+            />
+          </View>
+
+          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>缓存空间上限</Text>
+          <View style={styles.optionRow}>
+            {[256, 512, 1024].map((maxMb) => (
+              <TouchableOpacity
+                key={maxMb}
+                style={[styles.optionButton, { backgroundColor: colors.inputBg }, audioCacheMaxMb === maxMb && styles.optionButtonActive]}
+                onPress={() => setAudioCacheMaxMb(maxMb)}
+              >
+                <Text style={[styles.optionButtonText, { color: colors.textSecondary }, audioCacheMaxMb === maxMb && styles.optionButtonTextActive]}>
+                  {maxMb >= 1024 ? `${maxMb / 1024}GB` : `${maxMb}MB`}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={[styles.inputRow, styles.cacheInputRow]}>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.inputBg, color: colors.inputText }]}
+              value={editCacheMaxMb}
+              onChangeText={setEditCacheMaxMb}
+              keyboardType="number-pad"
+              placeholder="1024"
+              placeholderTextColor={colors.textMuted}
+            />
+            <TouchableOpacity style={styles.saveButton} onPress={handleSaveCacheMaxMb}>
+              <Text style={styles.saveButtonText}>保存</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={[styles.settingHint, { color: colors.textMuted }]}>
+            当前约 {cacheUsageMb.toFixed(1)} MB / {audioCacheMaxMb} MB
+          </Text>
         </View>
       </View>
 
@@ -144,6 +230,12 @@ const styles = StyleSheet.create({
   optionButtonActive: { backgroundColor: '#2563eb' },
   optionButtonText: { fontSize: 14 },
   optionButtonTextActive: { color: '#fff' },
+  divider: { height: StyleSheet.hairlineWidth, marginVertical: 16 },
+  switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 16 },
+  switchText: { flex: 1 },
+  settingTitle: { fontSize: 15, fontWeight: '500', marginBottom: 4 },
+  settingHint: { fontSize: 12, lineHeight: 18, marginTop: 8 },
+  cacheInputRow: { marginTop: 10 },
   logoutButton: { backgroundColor: '#dc2626', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   logoutButtonText: { color: '#fff', fontSize: 16, fontWeight: '500' },
   adminButton: { borderRadius: 12, paddingVertical: 14, alignItems: 'center', borderWidth: 1 },
