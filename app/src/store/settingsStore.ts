@@ -33,7 +33,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   // 从本地存储初始化状态
   serverUrl: getServerUrl(),
   lyricsSize: (getString(STORAGE_KEYS.LYRICS_SIZE) as LyricsSize) || 'md',
-  theme: (getString(STORAGE_KEYS.THEME) as Theme) || 'dark',
+  theme: (getString(STORAGE_KEYS.THEME) as Theme) || 'light',
   audioCacheEnabled: getBoolean(STORAGE_KEYS.AUDIO_CACHE_ENABLED) ?? false,
   audioCacheMaxMb: getNumber(STORAGE_KEYS.AUDIO_CACHE_MAX_MB) ?? 1024,
 
@@ -88,7 +88,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   loadFromStorage: () => {
     const serverUrl = getServerUrl();
     const lyricsSize = (getString(STORAGE_KEYS.LYRICS_SIZE) as LyricsSize) || 'md';
-    const theme = (getString(STORAGE_KEYS.THEME) as Theme) || 'dark';
+    const theme = (getString(STORAGE_KEYS.THEME) as Theme) || 'light';
     const audioCacheEnabled = getBoolean(STORAGE_KEYS.AUDIO_CACHE_ENABLED) ?? false;
     const audioCacheMaxMb = getNumber(STORAGE_KEYS.AUDIO_CACHE_MAX_MB) ?? 1024;
     set({ serverUrl, lyricsSize, theme, audioCacheEnabled, audioCacheMaxMb });
