@@ -1,7 +1,7 @@
 /**
  * Lyrics display with auto-scroll, tap-to-seek, dynamic styling
  */
-import React, { useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useRef, useEffect, useCallback, useMemo, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { useSettingsStore } from '../store';
 import { getColors } from '../theme/colors';
@@ -25,6 +25,8 @@ export default function LyricsView({
   const { parsedLyrics, currentLineIndex, getLineTime } = useLyrics(lyrics);
   const isScrollingByTap = useRef(false);
   const scrollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lineLayouts = useRef<Record<number, { y: number; height: number }>>({});
+  const [viewportHeight, setViewportHeight] = useState(0);
   const theme = useSettingsStore((s) => s.theme);
   const colors = useMemo(() => getColors(theme), [theme]);
 
@@ -41,12 +43,23 @@ export default function LyricsView({
 
   const layout = getLayout();
 
+  const centerCurrentLine = useCallback((animated = true) => {
+    if (currentLineIndex < 0 || !scrollViewRef.current || isScrollingByTap.current) return;
+
+    const lineLayout = lineLayouts.current[currentLineIndex];
+    if (!lineLayout || viewportHeight <= 0) return;
+
+    const targetY = Math.max(0, lineLayout.y + lineLayout.height / 2 - viewportHeight / 2);
+    scrollViewRef.current.scrollTo({ y: targetY, animated });
+  }, [currentLineIndex, viewportHeight]);
+
   useEffect(() => {
-    if (currentLineIndex >= 0 && scrollViewRef.current && !isScrollingByTap.current) {
-      const targetY = currentLineIndex * layout.lineHeight;
-      scrollViewRef.current.scrollTo({ y: targetY, animated: true });
-    }
-  }, [currentLineIndex, layout.lineHeight]);
+    centerCurrentLine(true);
+  }, [centerCurrentLine]);
+
+  useEffect(() => {
+    lineLayouts.current = {};
+  }, [lyrics, size]);
 
   const handleLinePress = useCallback(
     (index: number) => {
@@ -83,9 +96,13 @@ export default function LyricsView({
     <ScrollView
       ref={scrollViewRef}
       style={styles.container}
+      onLayout={(event) => setViewportHeight(event.nativeEvent.layout.height)}
       contentContainerStyle={[
         styles.content,
-        { paddingTop: SCREEN_HEIGHT * 0.3, paddingBottom: SCREEN_HEIGHT * 0.4 },
+        {
+          paddingTop: viewportHeight > 0 ? viewportHeight / 2 : SCREEN_HEIGHT * 0.3,
+          paddingBottom: viewportHeight > 0 ? viewportHeight / 2 : SCREEN_HEIGHT * 0.4,
+        },
       ]}
       showsVerticalScrollIndicator={false}
       scrollEventThrottle={16}
@@ -105,13 +122,26 @@ export default function LyricsView({
             key={index}
             activeOpacity={0.7}
             onPress={() => handleLinePress(index)}
-            style={[styles.lineWrapper, { paddingVertical: layout.verticalPadding }]}
+            onLayout={(event) => {
+              lineLayouts.current[index] = event.nativeEvent.layout;
+              if (index === currentLineIndex) {
+                centerCurrentLine(false);
+              }
+            }}
+            style={[
+              styles.lineWrapper,
+              {
+                minHeight: layout.lineHeight + layout.verticalPadding * 2,
+                paddingVertical: layout.verticalPadding,
+              },
+            ]}
           >
             <Text
               style={[
                 styles.line,
                 {
                   fontSize,
+                  lineHeight: layout.lineHeight,
                   fontWeight: isActive ? '700' : '400',
                   color: isActive ? colors.lyricsActive : isPast ? colors.lyricsPast : colors.lyricsFuture,
                   opacity,

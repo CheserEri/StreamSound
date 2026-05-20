@@ -87,6 +87,9 @@ export const STORAGE_KEYS = {
   LYRICS_SIZE: 'lyrics_size',         // 歌词尺寸设置
   THEME: 'theme',                     // 主题设置
   LYRICS_CACHE: 'lyrics_cache',       // 歌词缓存
+  AUDIO_CACHE_ENABLED: 'audio_cache_enabled', // 音乐缓存开关
+  AUDIO_CACHE_MAX_MB: 'audio_cache_max_mb',   // 音乐缓存最大占用空间
+  AUDIO_CACHE_MANIFEST: 'audio_cache_manifest', // 音乐缓存索引
   PERSISTED_QUEUE: 'persisted_queue', // 持久化队列
   PERSISTED_QUEUE_INDEX: 'persisted_queue_index', // 持久化队列索引
   PLAY_MODE: 'play_mode',             // 播放模式

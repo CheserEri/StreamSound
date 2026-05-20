@@ -65,7 +65,10 @@ export default function MiniPlayer() {
           isPlaying={isPlaying}
           onPress={isPlaying ? pause : play}
           size={40}
-          color={colors.miniPlayerIcon}
+          pausedBackgroundColor={colors.accent}
+          playingBackgroundColor="rgba(255, 255, 255, 0.12)"
+          pausedIconColor={colors.accentText}
+          playingIconColor={colors.miniPlayerIcon}
         />
         <TouchableOpacity
           style={styles.queueButton}
