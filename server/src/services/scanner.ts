@@ -8,6 +8,7 @@ import { existsSync } from 'fs';
 import { getDb } from '../db/client.js';
 import { config } from '../config.js';
 import { extractMetadata } from './metadata.js';
+import { extractDominantColor } from './colorExtractor.js';
 import { findLRCFile, readLRCFile } from './lyrics.js';
 import { AUDIO_EXTENSIONS } from '../types/index.js';
 import type { ScanState, ScanProgress } from '../types/index.js';
@@ -134,7 +135,7 @@ export async function startScan(musicRoot?: string): Promise<void> {
           scanState.progress!.added++;
         }
 
-        // 如果有封面，保存封面图片
+        // 如果有封面，保存封面图片并提取主色调
         if (meta.cover) {
           const trackRow = existing ? { id: existing.id } : db.prepare('SELECT id FROM tracks WHERE path = ?').get(filePath) as { id: number } | undefined;
           const trackId = trackRow?.id;
@@ -143,7 +144,8 @@ export async function startScan(musicRoot?: string): Promise<void> {
             await mkdir(coverDir, { recursive: true });
             const coverPath = join(coverDir, `${trackId}.jpg`);
             await writeFile(coverPath, meta.cover);
-            db.prepare('UPDATE tracks SET cover_path = ? WHERE id = ?').run(coverPath, trackId);
+            const dominantColor = await extractDominantColor(meta.cover);
+            db.prepare('UPDATE tracks SET cover_path = ?, cover_dominant_color = ? WHERE id = ?').run(coverPath, dominantColor, trackId);
           }
         }
       } catch (err) {

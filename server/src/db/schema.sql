@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS tracks (
     bitrate     INTEGER,
     sample_rate INTEGER,
     cover_path  TEXT,
+    cover_dominant_color TEXT,
     has_lyrics  INTEGER NOT NULL DEFAULT 0,
     lyrics      TEXT,
     file_size   INTEGER,

@@ -43,6 +43,7 @@ export interface TrackRow {
   bitrate: number | null;    // 比特率（kbps）
   sample_rate: number | null;// 采样率（Hz）
   cover_path: string | null; // 封面图片路径
+  cover_dominant_color: string | null; // 封面主色调 hex
   has_lyrics: number;        // 是否有歌词 (0/1)
   lyrics: string | null;     // 歌词内容
   file_size: number | null;  // 文件大小（字节）
@@ -106,6 +107,7 @@ export interface TrackDetailDTO extends TrackListItemDTO {
   fileSize: number | null;
   lyrics: string | null;
   isFavorited: boolean;
+  coverDominantColor: string | null;
 }
 
 /**

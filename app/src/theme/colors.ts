@@ -1,22 +1,5 @@
 import type { Theme } from '../types';
 
-// Curated dark atmospheric gradients for player background
-// Each palette: [top, mid, bottom] -- always dark enough for white text
-const PLAYER_GRADIENTS: string[][] = [
-  ['#1a1a2e', '#121218', '#0a0a12'], // deep navy (default)
-  ['#1e1428', '#140e1c', '#0a0810'], // dark purple
-  ['#1a2420', '#101a16', '#080e0a'], // forest green
-  ['#241a1a', '#1a1010', '#0e0808'], // dark burgundy
-  ['#1a1e28', '#10141e', '#080a10'], // steel blue
-  ['#221a14', '#18100e', '#0c0806'], // dark amber
-  ['#1a2020', '#101616', '#080a0a'], // teal
-  ['#201820', '#161016', '#0a080a'], // plum
-];
-
-export function getPlayerGradient(colorIndex: number): string[] {
-  return PLAYER_GRADIENTS[Math.abs(colorIndex) % PLAYER_GRADIENTS.length];
-}
-
 export function getColors(theme: Theme) {
   const isDark = theme === 'dark';
   return {
@@ -77,7 +60,6 @@ export function getColors(theme: Theme) {
     playerDot: '#555555',
     playerDotActive: '#ffffff',
     playerHeaderSubtitle: '#aaaaaa',
-    playerGradientDefault: ['#1a1a2e', '#121218', '#0a0a12'] as string[],
 
     // Slider
     sliderActive: '#ffffff',
@@ -91,12 +73,6 @@ export function getColors(theme: Theme) {
     lyricsEmptyIcon: '#444444',
     lyricsEmptyText: '#666666',
     lyricsEmptyHint: '#444444',
-
-    // Disc cover
-    discRing: '#1a1a1a',
-    discRingBorder: '#333333',
-    discCenter: '#0a0a0a',
-    discCenterBorder: '#333333',
 
     // Quick actions
     actionSearch: '#1db954',

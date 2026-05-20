@@ -34,6 +34,7 @@ export interface TrackDetail extends TrackListItem {
   fileSize: number | null;
   lyrics: string | null;
   isFavorited: boolean;
+  coverDominantColor: string | null;
 }
 
 // ==================== Favorites ====================

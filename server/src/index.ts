@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import { config } from './config.js';
 import { initDb, closeDb } from './db/client.js';
+import { runMigrations } from './db/migrate.js';
 import authPlugin from './plugins/auth.js';
 import corsPlugin from './plugins/cors.js';
 import authRoutes from './routes/auth.js';
@@ -27,6 +28,7 @@ async function main() {
   // Initialize database
   console.log('[DB] Initializing database...');
   initDb();
+  runMigrations();
   console.log('[DB] Database initialized.');
 
   // Register plugins

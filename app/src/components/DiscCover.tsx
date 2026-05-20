@@ -1,6 +1,8 @@
 /**
- * Spinning vinyl disc with album cover
- * Plays continuously when playing, stops on pause
+ * 网易云风格胶片转盘
+ * - 唱片环 + 封面 + 中心孔
+ * - 封面占比大，唱片纹理简洁
+ * - 播放时平滑旋转，暂停时停在当前角度
  */
 import React, { useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
@@ -12,15 +14,15 @@ import Animated, {
   Easing,
   cancelAnimation,
 } from 'react-native-reanimated';
-import { useSettingsStore } from '../store';
-import { getColors } from '../theme/colors';
 import CoverImage from './CoverImage';
+import { generateDiscColors } from '../utils/colorUtils';
 
 interface DiscCoverProps {
   trackId: number;
   hasCover: boolean;
   size?: number;
   isPlaying: boolean;
+  dominantColor?: string;
 }
 
 export default function DiscCover({
@@ -28,15 +30,19 @@ export default function DiscCover({
   hasCover,
   size = 280,
   isPlaying,
+  dominantColor,
 }: DiscCoverProps) {
   const rotation = useSharedValue(0);
-  const theme = useSettingsStore((s) => s.theme);
-  const colors = useMemo(() => getColors(theme), [theme]);
+
+  const discColors = useMemo(
+    () => generateDiscColors(dominantColor),
+    [dominantColor],
+  );
 
   React.useEffect(() => {
     if (isPlaying) {
       rotation.value = withRepeat(
-        withTiming(360, { duration: 20000, easing: Easing.linear }),
+        withTiming(360, { duration: 25000, easing: Easing.linear }),
         -1,
         false,
       );
@@ -49,19 +55,18 @@ export default function DiscCover({
     transform: [{ rotate: `${rotation.value}deg` }],
   }));
 
-  const innerSize = size * 0.75;
+  const innerSize = size * 0.80;
   const ringWidth = (size - innerSize) / 2;
 
-  // Vinyl groove radii (concentric circles between ring edge and cover)
+  // 两圈简洁的唱片纹理
   const grooveRadii = [
-    size / 2 - ringWidth * 0.2,
-    size / 2 - ringWidth * 0.5,
-    size / 2 - ringWidth * 0.8,
+    size / 2 - ringWidth * 0.3,
+    size / 2 - ringWidth * 0.7,
   ];
 
   return (
     <View style={[styles.container, { width: size, height: size }]}>
-      {/* Outer vinyl ring */}
+      {/* 外层唱片环 */}
       <View
         style={[
           styles.vinylRing,
@@ -69,13 +74,13 @@ export default function DiscCover({
             width: size,
             height: size,
             borderRadius: size / 2,
-            backgroundColor: colors.discRing,
-            borderColor: colors.discRingBorder,
+            backgroundColor: discColors.ring,
+            borderColor: discColors.ringBorder,
           },
         ]}
       />
 
-      {/* Vinyl grooves */}
+      {/* 唱片纹理 */}
       {grooveRadii.map((radius, i) => (
         <View
           key={i}
@@ -85,13 +90,13 @@ export default function DiscCover({
               width: radius * 2,
               height: radius * 2,
               borderRadius: radius,
-              borderColor: colors.discRingBorder,
+              borderColor: discColors.ringBorder,
             },
           ]}
         />
       ))}
 
-      {/* Spinning cover */}
+      {/* 旋转的封面 */}
       <Animated.View
         style={[
           styles.coverWrapper,
@@ -116,16 +121,16 @@ export default function DiscCover({
         />
       </Animated.View>
 
-      {/* Center hole */}
+      {/* 中心孔 */}
       <View
         style={[
           styles.centerHole,
           {
-            width: 18,
-            height: 18,
-            borderRadius: 9,
-            backgroundColor: colors.discCenter,
-            borderColor: colors.discCenterBorder,
+            width: 12,
+            height: 12,
+            borderRadius: 6,
+            backgroundColor: discColors.center,
+            borderColor: discColors.centerBorder,
           },
         ]}
       />
@@ -140,24 +145,24 @@ const styles = StyleSheet.create({
   },
   vinylRing: {
     position: 'absolute',
-    borderWidth: 2,
+    borderWidth: 1.5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 8,
   },
   groove: {
     position: 'absolute',
     borderWidth: StyleSheet.hairlineWidth,
-    opacity: 0.3,
+    opacity: 0.2,
   },
   coverWrapper: {
     overflow: 'hidden',
   },
   centerHole: {
     position: 'absolute',
-    borderWidth: 2,
+    borderWidth: 1.5,
     zIndex: 10,
   },
 });
