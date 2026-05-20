@@ -1,5 +1,11 @@
 /**
- * Animated play/pause button with distinct states and icon morphing.
+ * Apple Music style animated play/pause button.
+ *
+ * Paused state:  rounded-square (borderRadius ~22%) + solid background
+ * Playing state: circle (borderRadius 50%) + translucent background
+ *
+ * Morphs between the two with a spring-animated borderRadius.
+ * Icons cross-fade via opacity — no rotation, no glow, no ripple.
  */
 import React, { useCallback, useEffect } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
@@ -43,10 +49,19 @@ export default function AnimatedPlayButton({
   const progress = useSharedValue(isPlaying ? 1 : 0);
 
   useEffect(() => {
-    progress.value = withTiming(isPlaying ? 1 : 0, { duration: 220 });
+    progress.value = withSpring(isPlaying ? 1 : 0, {
+      damping: 15,
+      stiffness: 200,
+    });
   }, [isPlaying, progress]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
+  // Container: borderRadius morphs circle ↔ rounded-square
+  const containerStyle = useAnimatedStyle(() => ({
+    borderRadius: interpolate(
+      progress.value,
+      [0, 1],
+      [size * 0.22, size / 2],
+    ),
     backgroundColor: interpolateColor(
       progress.value,
       [0, 1],
@@ -55,28 +70,25 @@ export default function AnimatedPlayButton({
     borderColor: interpolateColor(
       progress.value,
       [0, 1],
-      ['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.38)'],
+      ['rgba(0, 0, 0, 0.06)', 'rgba(255, 255, 255, 0.22)'],
     ),
-    transform: [
-      { scale: scale.value },
-      { rotate: `${interpolate(progress.value, [0, 1], [0, 45])}deg` },
-    ],
-  }), [pausedBackgroundColor, playingBackgroundColor]);
+    transform: [{ scale: scale.value }],
+  }), [size, pausedBackgroundColor, playingBackgroundColor]);
 
+  // Play icon: visible when paused
   const playIconStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 0.45, 1], [1, 0, 0]),
+    opacity: interpolate(progress.value, [0, 0.4, 1], [1, 0, 0]),
     transform: [
-      { scale: interpolate(progress.value, [0, 1], [1, 0.62]) },
-      { rotate: `${interpolate(progress.value, [0, 1], [0, -45])}deg` },
-      { translateX: size * 0.025 },
+      { scale: interpolate(progress.value, [0, 1], [1, 0.75]) },
+      { translateX: -size * 0.01 },
     ],
   }), [size]);
 
+  // Pause icon: visible when playing
   const pauseIconStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 0.55, 1], [0, 0, 1]),
+    opacity: interpolate(progress.value, [0, 0.6, 1], [0, 0, 1]),
     transform: [
-      { scale: interpolate(progress.value, [0, 1], [0.62, 1]) },
-      { rotate: `${interpolate(progress.value, [0, 1], [-45, -45])}deg` },
+      { scale: interpolate(progress.value, [0, 1], [0.75, 1]) },
     ],
   }));
 
@@ -90,14 +102,14 @@ export default function AnimatedPlayButton({
 
   const handlePress = useCallback(() => {
     scale.value = withSequence(
-      withTiming(0.92, { duration: 80 }),
-      withSpring(1, { damping: 12, stiffness: 300 }),
+      withTiming(0.92, { duration: 60 }),
+      withSpring(1, { damping: 12, stiffness: 350 }),
     );
     onPress();
   }, [onPress]);
 
-  const iconSize = size * 0.42;
-  const pauseIconSize = size * 0.38;
+  const iconSize = size * 0.38;
+  const pauseIconSize = size * 0.32;
 
   return (
     <AnimatedPressable
@@ -106,10 +118,9 @@ export default function AnimatedPlayButton({
         {
           width: size,
           height: size,
-          borderRadius: size / 2,
-          shadowColor: backgroundColor,
+          shadowColor: '#000',
         },
-        animatedStyle,
+        containerStyle,
       ]}
       onPress={handlePress}
       onPressIn={handlePressIn}
@@ -130,10 +141,10 @@ const styles = StyleSheet.create({
   container: {
     justifyContent: 'center',
     alignItems: 'center',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
     borderWidth: 1,
     overflow: 'hidden',
   },
