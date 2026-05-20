@@ -14,10 +14,18 @@ import {
   Text,
   Image,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   Dimensions,
   ScrollView,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  withSequence,
+} from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -50,6 +58,38 @@ import { formatProgress } from '../utils/format';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COVER_SIZE = SCREEN_WIDTH * 0.68;
+
+/** Skip / mode button with spring press bounce */
+function AnimatedControlButton({
+  onPress,
+  children,
+  style,
+  hitSlop = 8,
+}: {
+  onPress: () => void;
+  children: React.ReactNode;
+  style?: any;
+  hitSlop?: number;
+}) {
+  const scale = useSharedValue(1);
+  const aStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+  return (
+    <Pressable
+      onPress={() => {
+        scale.value = withSequence(
+          withTiming(0.8, { duration: 60 }),
+          withSpring(1, { damping: 10, stiffness: 400 }),
+        );
+        onPress();
+      }}
+      hitSlop={hitSlop}
+    >
+      <Animated.View style={[style, aStyle]}>{children}</Animated.View>
+    </Pressable>
+  );
+}
 
 const hapticOptions = {
   enableVibrateFallback: true,
@@ -310,39 +350,36 @@ export default function PlayerScreen() {
 
         {/* Controls */}
         <View style={[styles.controls, { paddingBottom: insets.bottom + 16 }]}>
-          <TouchableOpacity
+          <AnimatedControlButton
             onPress={() => { triggerHaptic(); toggleMode(); }}
             style={styles.modeButton}
-            hitSlop={8}
           >
             {getModeIconComponent()}
-          </TouchableOpacity>
+          </AnimatedControlButton>
 
-          <TouchableOpacity
+          <AnimatedControlButton
             onPress={handleSkipPrevious}
             style={styles.controlButton}
-            hitSlop={8}
           >
             <SkipPreviousIcon size={32} color={colors.playerText} />
-          </TouchableOpacity>
+          </AnimatedControlButton>
 
           <AnimatedPlayButton
             isPlaying={isPlaying}
             onPress={handlePlayPause}
-            size={72}
+            size={76}
             pausedBackgroundColor={colors.playerText}
             playingBackgroundColor="rgba(255, 255, 255, 0.16)"
             pausedIconColor="#111111"
             playingIconColor={colors.playerText}
           />
 
-          <TouchableOpacity
+          <AnimatedControlButton
             onPress={handleSkipNext}
             style={styles.controlButton}
-            hitSlop={8}
           >
             <SkipNextIcon size={32} color={colors.playerText} />
-          </TouchableOpacity>
+          </AnimatedControlButton>
 
           <View style={styles.modeButton} />
         </View>
@@ -486,7 +523,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
-    gap: 20,
+    gap: 24,
     zIndex: 1,
   },
   controlButton: {

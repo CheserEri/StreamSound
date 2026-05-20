@@ -16,9 +16,9 @@ import Animated, {
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SLIDER_WIDTH = SCREEN_WIDTH - 48;
-const THUMB_SIZE = 14;
-const TRACK_HEIGHT = 4;
-const HIT_AREA_HEIGHT = 40;
+const THUMB_SIZE = 16;
+const TRACK_HEIGHT = 5;
+const HIT_AREA_HEIGHT = 44;
 
 interface GlowSliderProps {
   value: number;
@@ -148,7 +148,7 @@ export default function GlowSlider({
       : maximumValue > 0
         ? Math.min(value / maximumValue, 1)
         : 0;
-    return { left: Math.max(0, ratio * SLIDER_WIDTH - THUMB_SIZE * 1.25) };
+    return { left: Math.max(0, ratio * SLIDER_WIDTH - THUMB_SIZE * 1.4) };
   });
 
   return (
@@ -229,20 +229,20 @@ const styles = StyleSheet.create({
   trackGlow: {
     position: 'absolute',
     left: 0,
-    height: TRACK_HEIGHT + 6,
-    top: (HIT_AREA_HEIGHT - TRACK_HEIGHT - 6) / 2,
-    borderRadius: (TRACK_HEIGHT + 6) / 2,
-    opacity: 0.25,
+    height: TRACK_HEIGHT + 8,
+    top: (HIT_AREA_HEIGHT - TRACK_HEIGHT - 8) / 2,
+    borderRadius: (TRACK_HEIGHT + 8) / 2,
+    opacity: 0.3,
   },
   trackActive: {
     zIndex: 1,
   },
   thumbGlow: {
     position: 'absolute',
-    top: (HIT_AREA_HEIGHT - THUMB_SIZE * 2.5) / 2,
-    width: THUMB_SIZE * 2.5,
-    height: THUMB_SIZE * 2.5,
-    borderRadius: THUMB_SIZE * 1.25,
+    top: (HIT_AREA_HEIGHT - THUMB_SIZE * 2.8) / 2,
+    width: THUMB_SIZE * 2.8,
+    height: THUMB_SIZE * 2.8,
+    borderRadius: THUMB_SIZE * 1.4,
     zIndex: 0,
   },
   thumb: {
@@ -252,10 +252,10 @@ const styles = StyleSheet.create({
     height: THUMB_SIZE,
     borderRadius: THUMB_SIZE / 2,
     zIndex: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowColor: '#fff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    elevation: 6,
   },
 });
