@@ -33,7 +33,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { usePlayer } from '../hooks/usePlayer';
 import { useSettingsStore } from '../store';
-import { getColors, getPlayerGradient } from '../theme/colors';
+import { getColors } from '../theme/colors';
+import { generatePlayerGradient, DEFAULT_PLAYER_GRADIENT } from '../utils/colorUtils';
 import api from '../services/api';
 import { getCoverUrl } from '../services/player';
 import { getCachedLyrics, setCachedLyrics } from '../services/storage';
@@ -122,11 +123,11 @@ export default function PlayerScreen() {
   const [currentPage, setCurrentPage] = useState(0);
   const [coverLoaded, setCoverLoaded] = useState(false);
 
-  // Dynamic gradient based on track
+  // Dynamic gradient from album cover dominant color
   const gradientColors = useMemo(() => {
-    if (!currentTrack) return colors.playerGradientDefault;
-    return getPlayerGradient(currentTrack.id);
-  }, [currentTrack?.id]);
+    if (!trackDetail?.coverDominantColor) return DEFAULT_PLAYER_GRADIENT;
+    return generatePlayerGradient(trackDetail.coverDominantColor);
+  }, [trackDetail?.coverDominantColor]);
 
   // Fetch track details + lyrics
   useEffect(() => {
@@ -148,6 +149,7 @@ export default function PlayerScreen() {
         fileSize: null,
         lyrics: cached,
         isFavorited: false,
+        coverDominantColor: null,
       });
     } else {
       setTrackDetail(null);
@@ -198,7 +200,7 @@ export default function PlayerScreen() {
 
   if (!currentTrack) {
     return (
-      <GradientBackground colors={colors.playerGradientDefault}>
+      <GradientBackground colors={DEFAULT_PLAYER_GRADIENT}>
         <View style={styles.center}>
           <MusicNoteIcon size={48} color={colors.textMuted} />
           <Text style={[styles.noTrackText, { color: colors.textMuted }]}>未在播放</Text>
@@ -293,6 +295,7 @@ export default function PlayerScreen() {
                 hasCover={currentTrack.hasCover}
                 size={COVER_SIZE}
                 isPlaying={isPlaying}
+                dominantColor={trackDetail?.coverDominantColor ?? undefined}
               />
             </View>
           </View>
@@ -408,12 +411,12 @@ const styles = StyleSheet.create({
   },
   atmosphereImage: {
     ...StyleSheet.absoluteFillObject,
-    opacity: 0.4,
+    opacity: 0.3,
     transform: [{ scale: 1.3 }],
   },
   atmosphereOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
   },
   // Header
   header: {
