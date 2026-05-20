@@ -14,10 +14,19 @@ import {
   Text,
   Image,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   Dimensions,
   ScrollView,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  withSequence,
+} from 'react-native-reanimated';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,7 +34,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { usePlayer } from '../hooks/usePlayer';
 import { useSettingsStore } from '../store';
-import { getColors, getPlayerGradient } from '../theme/colors';
+import { getColors } from '../theme/colors';
+import { generatePlayerGradient, generateAtmosphereOverlay, DEFAULT_PLAYER_GRADIENT } from '../utils/colorUtils';
 import api from '../services/api';
 import { getCoverUrl } from '../services/player';
 import { getCachedLyrics, setCachedLyrics } from '../services/storage';
@@ -49,7 +59,102 @@ import {
 import { formatProgress } from '../utils/format';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const COVER_SIZE = SCREEN_WIDTH * 0.68;
+const COVER_SIZE = Math.min(SCREEN_WIDTH * 0.76, 340);
+
+/** Skip / mode button with spring press bounce */
+function AnimatedControlButton({
+  onPress,
+  children,
+  style,
+  hitSlop = 8,
+}: {
+  onPress: () => void;
+  children: React.ReactNode;
+  style?: any;
+  hitSlop?: number;
+}) {
+  const scale = useSharedValue(1);
+  const aStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+  return (
+    <Pressable
+      onPress={() => {
+        scale.value = withSequence(
+          withTiming(0.8, { duration: 60 }),
+          withSpring(1, { damping: 10, stiffness: 400 }),
+        );
+        onPress();
+      }}
+      hitSlop={hitSlop}
+    >
+      <Animated.View style={[style, aStyle]}>{children}</Animated.View>
+    </Pressable>
+  );
+}
+
+function NeedleArm({ isPlaying }: { isPlaying: boolean }) {
+  const progress = useSharedValue(isPlaying ? 1 : 0);
+
+  React.useEffect(() => {
+    progress.value = withSpring(isPlaying ? 1 : 0, {
+      damping: 16,
+      stiffness: 90,
+      mass: 0.7,
+    });
+  }, [isPlaying, progress]);
+
+  const armStyle = useAnimatedStyle(() => ({
+    transform: [
+      { rotate: `${-24 + progress.value * 18}deg` },
+    ],
+  }));
+
+  return (
+    <View style={styles.needleStage} pointerEvents="none">
+      <View style={styles.needlePivotGlow} />
+      <Animated.View style={[styles.needleArm, armStyle]}>
+        <Svg width={132} height={174} viewBox="0 0 132 174">
+          <Circle cx="32" cy="28" r="22" fill="rgba(0,0,0,0.18)" />
+          <Circle cx="32" cy="28" r="13" fill="#f6f1ee" />
+          <Circle cx="32" cy="28" r="5" fill="rgba(255,255,255,0.95)" />
+          <Path
+            d="M36 40 C42 76 50 116 92 145"
+            stroke="#f6f1ee"
+            strokeWidth="12"
+            strokeLinecap="round"
+            fill="none"
+          />
+          <Path
+            d="M45 89 C52 116 64 132 91 148"
+            stroke="rgba(255,255,255,0.35)"
+            strokeWidth="3"
+            strokeLinecap="round"
+            fill="none"
+          />
+          <Rect
+            x="88"
+            y="136"
+            width="34"
+            height="22"
+            rx="5"
+            fill="#f6f1ee"
+            transform="rotate(34 105 147)"
+          />
+          <Rect
+            x="98"
+            y="142"
+            width="22"
+            height="4"
+            rx="2"
+            fill="rgba(0,0,0,0.18)"
+            transform="rotate(34 109 144)"
+          />
+        </Svg>
+      </Animated.View>
+    </View>
+  );
+}
 
 const hapticOptions = {
   enableVibrateFallback: true,
@@ -82,11 +187,11 @@ export default function PlayerScreen() {
   const [currentPage, setCurrentPage] = useState(0);
   const [coverLoaded, setCoverLoaded] = useState(false);
 
-  // Dynamic gradient based on track
+  // Dynamic gradient from album cover dominant color
   const gradientColors = useMemo(() => {
-    if (!currentTrack) return colors.playerGradientDefault;
-    return getPlayerGradient(currentTrack.id);
-  }, [currentTrack?.id]);
+    if (!trackDetail?.coverDominantColor) return DEFAULT_PLAYER_GRADIENT;
+    return generatePlayerGradient(trackDetail.coverDominantColor);
+  }, [trackDetail?.coverDominantColor]);
 
   // Fetch track details + lyrics
   useEffect(() => {
@@ -108,6 +213,7 @@ export default function PlayerScreen() {
         fileSize: null,
         lyrics: cached,
         isFavorited: false,
+        coverDominantColor: null,
       });
     } else {
       setTrackDetail(null);
@@ -158,7 +264,7 @@ export default function PlayerScreen() {
 
   if (!currentTrack) {
     return (
-      <GradientBackground colors={colors.playerGradientDefault}>
+      <GradientBackground colors={DEFAULT_PLAYER_GRADIENT}>
         <View style={styles.center}>
           <MusicNoteIcon size={48} color={colors.textMuted} />
           <Text style={[styles.noTrackText, { color: colors.textMuted }]}>未在播放</Text>
@@ -189,7 +295,7 @@ export default function PlayerScreen() {
               blurRadius={30}
               resizeMode="cover"
             />
-            <View style={styles.atmosphereOverlay} />
+            <View style={[styles.atmosphereOverlay, { backgroundColor: generateAtmosphereOverlay(trackDetail?.coverDominantColor) }]} />
           </View>
         )}
 
@@ -204,7 +310,10 @@ export default function PlayerScreen() {
           </TouchableOpacity>
 
           <View style={styles.headerCenter}>
-            <Text style={[styles.headerTitle, { color: colors.playerHeaderSubtitle }]}>正在播放</Text>
+            <Text style={[styles.headerTitle, { color: colors.playerHeaderSubtitle }]}>StreamSound</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.playerTextMuted }]} numberOfLines={1}>
+              {currentTrack.artist || '未知艺术家'}
+            </Text>
           </View>
 
           <TouchableOpacity
@@ -248,12 +357,16 @@ export default function PlayerScreen() {
           {/* Page 1: Album Cover */}
           <View style={styles.page}>
             <View style={styles.coverSection}>
-              <DiscCover
-                trackId={currentTrack.id}
-                hasCover={currentTrack.hasCover}
-                size={COVER_SIZE}
-                isPlaying={isPlaying}
-              />
+              <NeedleArm isPlaying={isPlaying} />
+              <View style={styles.turntableHalo}>
+                <DiscCover
+                  trackId={currentTrack.id}
+                  hasCover={currentTrack.hasCover}
+                  size={COVER_SIZE}
+                  isPlaying={isPlaying}
+                  dominantColor={trackDetail?.coverDominantColor ?? undefined}
+                />
+              </View>
             </View>
           </View>
 
@@ -285,6 +398,13 @@ export default function PlayerScreen() {
               initialFavorited={trackDetail?.isFavorited ?? false}
               size={26}
             />
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Queue')}
+              style={styles.commentButton}
+              hitSlop={8}
+            >
+              <QueueIcon size={25} color={colors.playerTextSecondary} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -310,39 +430,36 @@ export default function PlayerScreen() {
 
         {/* Controls */}
         <View style={[styles.controls, { paddingBottom: insets.bottom + 16 }]}>
-          <TouchableOpacity
+          <AnimatedControlButton
             onPress={() => { triggerHaptic(); toggleMode(); }}
             style={styles.modeButton}
-            hitSlop={8}
           >
             {getModeIconComponent()}
-          </TouchableOpacity>
+          </AnimatedControlButton>
 
-          <TouchableOpacity
+          <AnimatedControlButton
             onPress={handleSkipPrevious}
             style={styles.controlButton}
-            hitSlop={8}
           >
             <SkipPreviousIcon size={32} color={colors.playerText} />
-          </TouchableOpacity>
+          </AnimatedControlButton>
 
           <AnimatedPlayButton
             isPlaying={isPlaying}
             onPress={handlePlayPause}
-            size={72}
-            pausedBackgroundColor={colors.playerText}
-            playingBackgroundColor="rgba(255, 255, 255, 0.16)"
-            pausedIconColor="#111111"
+            size={76}
+            pausedBackgroundColor="rgba(255, 255, 255, 0.18)"
+            playingBackgroundColor="rgba(255, 255, 255, 0.08)"
+            pausedIconColor={colors.playerText}
             playingIconColor={colors.playerText}
           />
 
-          <TouchableOpacity
+          <AnimatedControlButton
             onPress={handleSkipNext}
             style={styles.controlButton}
-            hitSlop={8}
           >
             <SkipNextIcon size={32} color={colors.playerText} />
-          </TouchableOpacity>
+          </AnimatedControlButton>
 
           <View style={styles.modeButton} />
         </View>
@@ -371,12 +488,12 @@ const styles = StyleSheet.create({
   },
   atmosphereImage: {
     ...StyleSheet.absoluteFillObject,
-    opacity: 0.4,
-    transform: [{ scale: 1.3 }],
+    opacity: 0.34,
+    transform: [{ scale: 1.35 }],
   },
   atmosphereOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    opacity: 0.85,
   },
   // Header
   header: {
@@ -402,6 +519,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 1.5,
+  },
+  headerSubtitle: {
+    marginTop: 3,
+    fontSize: 11,
+    fontWeight: '500',
   },
   // Page indicator
   pageIndicator: {
@@ -432,8 +554,45 @@ const styles = StyleSheet.create({
   },
   coverSection: {
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     flex: 1,
+    paddingTop: 18,
+    paddingBottom: 26,
+  },
+  needleStage: {
+    position: 'absolute',
+    top: -2,
+    left: SCREEN_WIDTH / 2 - 36,
+    width: 170,
+    height: 208,
+    zIndex: 4,
+  },
+  needlePivotGlow: {
+    position: 'absolute',
+    left: 3,
+    top: 0,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: 'rgba(0, 0, 0, 0.14)',
+  },
+  needleArm: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    width: 132,
+    height: 174,
+    transformOrigin: '32px 28px',
+  },
+  turntableHalo: {
+    width: COVER_SIZE + 34,
+    height: COVER_SIZE + 34,
+    borderRadius: (COVER_SIZE + 34) / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.035)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.07)',
   },
   lyricsSection: {
     flex: 1,
@@ -450,10 +609,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 16,
   },
   trackInfoText: {
     flex: 1,
-    marginRight: 12,
   },
   trackTitle: {
     fontSize: 20,
@@ -464,6 +623,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 4,
     fontWeight: '400',
+  },
+  commentButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   // Progress
   progressContainer: {
@@ -486,7 +651,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
-    gap: 20,
+    gap: 26,
     zIndex: 1,
   },
   controlButton: {

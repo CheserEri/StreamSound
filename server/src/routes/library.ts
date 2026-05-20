@@ -154,6 +154,7 @@ export default async function libraryRoutes(fastify: FastifyInstance) {
         lyrics: track.lyrics,
         folderId: track.folder_id,
         isFavorited: !!fav,
+        coverDominantColor: track.cover_dominant_color,
       },
     });
   });
