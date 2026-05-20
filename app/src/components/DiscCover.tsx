@@ -142,6 +142,11 @@ const styles = StyleSheet.create({
   container: {
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.35,
+    shadowRadius: 26,
+    elevation: 14,
   },
   vinylRing: {
     position: 'absolute',
@@ -155,7 +160,7 @@ const styles = StyleSheet.create({
   groove: {
     position: 'absolute',
     borderWidth: StyleSheet.hairlineWidth,
-    opacity: 0.2,
+    opacity: 0.28,
   },
   coverWrapper: {
     overflow: 'hidden',
