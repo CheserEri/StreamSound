@@ -71,7 +71,7 @@ function hslToHex(h: number, s: number, l: number): string {
  * 从封面主色生成播放器渐变（3 色）
  * 网易云风格：保持色调，大幅降低饱和度和明度
  */
-export function generatePlayerGradient(hexColor: string): string[] {
+export function generatePlayerGradient(hexColor?: string | null): string[] {
   if (!hexColor || hexColor.length < 7) return DEFAULT_PLAYER_GRADIENT;
 
   try {
@@ -100,9 +100,33 @@ export function generatePlayerGradient(hexColor: string): string[] {
 }
 
 /**
+ * 从封面主色生成氛围遮罩颜色（极暗版本，用于模糊封面叠加层）
+ * 保留色调但极度压暗，让模糊封面的色彩透出
+ */
+export function generateAtmosphereOverlay(hexColor?: string | null): string {
+  if (!hexColor || hexColor.length < 7) return 'rgba(0, 0, 0, 0.22)';
+
+  try {
+    const [r, g, b] = hexToRgb(hexColor);
+    let [h, s] = rgbToHsl(r, g, b);
+
+    if (s < 0.08) {
+      h = 220;
+      s = 0.06;
+    }
+
+    // 极低饱和度 + 极低明度
+    s = Math.min(s * 0.4, 0.18);
+    return hslToHex(h, s, 0.06);
+  } catch {
+    return 'rgba(0, 0, 0, 0.22)';
+  }
+}
+
+/**
  * 从封面主色生成唱片环颜色（深色版本）
  */
-export function generateDiscColors(hexColor: string): {
+export function generateDiscColors(hexColor?: string | null): {
   ring: string;
   ringBorder: string;
   center: string;
