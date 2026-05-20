@@ -21,6 +21,7 @@ import {
   clearPersistedQueue,
 } from '../services/storage';
 import { getServerUrl, reportPlayHistory } from '../services/api';
+import { cacheTrackAudio, getCachedAudioUrl } from '../services/audioCache';
 import type { TrackListItem, PlayMode } from '../types';
 
 // 播放历史上报阈值（播放超过30秒才上报）
@@ -124,19 +125,25 @@ interface PlayerState {
 /**
  * 将歌曲信息转换为 RNTP 格式
  */
-function mapTrackToRNTP(track: TrackListItem): RNTPTrack {
+async function mapTrackToRNTP(track: TrackListItem): Promise<RNTPTrack> {
   const serverUrl = getServerUrl();
   const token = getString(STORAGE_KEYS.ACCESS_TOKEN);
+  const cachedUrl = await getCachedAudioUrl(track.id);
 
   return {
     id: track.id.toString(),
-    url: `${serverUrl}/stream/${track.id}`,
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    url: cachedUrl || `${serverUrl}/stream/${track.id}`,
+    headers: cachedUrl ? undefined : token ? { Authorization: `Bearer ${token}` } : undefined,
     title: track.title,
     artist: track.artist || undefined,
     artwork: track.hasCover ? `${serverUrl}/covers/${track.id}` : undefined,
     duration: track.duration || undefined,
   };
+}
+
+function cacheTrackInBackground(track?: TrackListItem): void {
+  if (!track) return;
+  cacheTrackAudio(track.id);
 }
 
 /**
@@ -201,11 +208,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         const persisted = getPersistedQueue();
         if (persisted && persisted.queue.length > 0) {
           const { queue, index } = persisted;
-          const rntpTracks = queue.map(mapTrackToRNTP);
+          const rntpTracks = await Promise.all(queue.map(mapTrackToRNTP));
           await TrackPlayer.add(rntpTracks);
           const safeIndex = Math.min(index, queue.length - 1);
           await TrackPlayer.skip(safeIndex);
           set({ queue, currentIndex: safeIndex });
+          cacheTrackInBackground(queue[safeIndex]);
         }
 
         // 监听当前播放歌曲变化
@@ -217,6 +225,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
             if (event.index >= 0 && event.index < q.length) {
               const metaDuration = q[event.index].duration || 0;
               set({ progress: 0, duration: metaDuration });
+              cacheTrackInBackground(q[event.index]);
             }
           }
         });
@@ -269,7 +278,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
    * 设置播放队列
    */
   setQueue: async (tracks: TrackListItem[], startIndex = 0) => {
-    const rntpTracks = tracks.map(mapTrackToRNTP);
+    const rntpTracks = await Promise.all(tracks.map(mapTrackToRNTP));
     await TrackPlayer.reset();
     await TrackPlayer.add(rntpTracks);
     await TrackPlayer.skip(startIndex);
@@ -277,13 +286,14 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     set({ queue: tracks, currentIndex: startIndex, isPlaying: true, reportedTracks: new Set() });
     startProgressPolling(get, set);
     persistQueueDebounced(tracks, startIndex);
+    cacheTrackInBackground(tracks[startIndex]);
   },
 
   /**
    * 追加到播放队列
    */
   appendToQueue: async (tracks: TrackListItem[]) => {
-    const rntpTracks = tracks.map(mapTrackToRNTP);
+    const rntpTracks = await Promise.all(tracks.map(mapTrackToRNTP));
     await TrackPlayer.add(rntpTracks);
     set((state) => {
       const newQueue = [...state.queue, ...tracks];
@@ -333,6 +343,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     set({ currentIndex: nextIndex, isPlaying: true });
     startProgressPolling(get, set);
     persistQueueDebounced(queue, nextIndex);
+    cacheTrackInBackground(queue[nextIndex]);
   },
 
   /**
@@ -355,6 +366,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     set({ currentIndex: prevIndex, isPlaying: true });
     startProgressPolling(get, set);
     persistQueueDebounced(get().queue, prevIndex);
+    cacheTrackInBackground(get().queue[prevIndex]);
   },
 
   /**
