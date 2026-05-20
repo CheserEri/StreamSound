@@ -3,9 +3,10 @@
  * 使用 Zustand 管理应用设置，包括服务器地址、歌词尺寸、主题等
  */
 import { create } from 'zustand';
-import { getString, setString, STORAGE_KEYS } from '../services/storage';
+import { getBoolean, getNumber, getString, setBoolean, setNumber, setString, STORAGE_KEYS } from '../services/storage';
 import { setServerUrl as setApiServerUrl, getServerUrl } from '../services/api';
 import type { LyricsSize, Theme } from '../types';
+import { pruneAudioCache } from '../services/audioCache';
 
 /**
  * 设置状态接口
@@ -14,10 +15,14 @@ interface SettingsState {
   serverUrl: string;                 // 服务器地址
   lyricsSize: LyricsSize;            // 歌词显示尺寸
   theme: Theme;                      // 主题
+  audioCacheEnabled: boolean;        // 音乐缓存开关
+  audioCacheMaxMb: number;           // 音乐缓存最大占用空间
 
   setServerUrl: (url: string) => void;
   setLyricsSize: (size: LyricsSize) => void;
   setTheme: (theme: Theme) => void;
+  setAudioCacheEnabled: (enabled: boolean) => void;
+  setAudioCacheMaxMb: (maxMb: number) => void;
   loadFromStorage: () => void;
 }
 
@@ -29,6 +34,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   serverUrl: getServerUrl(),
   lyricsSize: (getString(STORAGE_KEYS.LYRICS_SIZE) as LyricsSize) || 'md',
   theme: (getString(STORAGE_KEYS.THEME) as Theme) || 'dark',
+  audioCacheEnabled: getBoolean(STORAGE_KEYS.AUDIO_CACHE_ENABLED) ?? false,
+  audioCacheMaxMb: getNumber(STORAGE_KEYS.AUDIO_CACHE_MAX_MB) ?? 1024,
 
   /**
    * 设置服务器地址
@@ -58,12 +65,32 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   },
 
   /**
+   * 设置音乐缓存开关
+   */
+  setAudioCacheEnabled: (enabled: boolean) => {
+    setBoolean(STORAGE_KEYS.AUDIO_CACHE_ENABLED, enabled);
+    set({ audioCacheEnabled: enabled });
+  },
+
+  /**
+   * 设置音乐缓存最大占用空间
+   */
+  setAudioCacheMaxMb: (maxMb: number) => {
+    const safeMaxMb = Math.max(1, Math.floor(maxMb));
+    setNumber(STORAGE_KEYS.AUDIO_CACHE_MAX_MB, safeMaxMb);
+    set({ audioCacheMaxMb: safeMaxMb });
+    pruneAudioCache(safeMaxMb * 1024 * 1024).catch(() => undefined);
+  },
+
+  /**
    * 从本地存储加载设置
    */
   loadFromStorage: () => {
     const serverUrl = getServerUrl();
     const lyricsSize = (getString(STORAGE_KEYS.LYRICS_SIZE) as LyricsSize) || 'md';
     const theme = (getString(STORAGE_KEYS.THEME) as Theme) || 'dark';
-    set({ serverUrl, lyricsSize, theme });
+    const audioCacheEnabled = getBoolean(STORAGE_KEYS.AUDIO_CACHE_ENABLED) ?? false;
+    const audioCacheMaxMb = getNumber(STORAGE_KEYS.AUDIO_CACHE_MAX_MB) ?? 1024;
+    set({ serverUrl, lyricsSize, theme, audioCacheEnabled, audioCacheMaxMb });
   },
 }));

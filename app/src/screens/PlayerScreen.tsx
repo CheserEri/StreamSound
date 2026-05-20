@@ -330,8 +330,10 @@ export default function PlayerScreen() {
             isPlaying={isPlaying}
             onPress={handlePlayPause}
             size={72}
-            color={colors.playerText}
-            backgroundColor={colors.playerText}
+            pausedBackgroundColor={colors.playerText}
+            playingBackgroundColor="rgba(255, 255, 255, 0.16)"
+            pausedIconColor="#111111"
+            playingIconColor={colors.playerText}
           />
 
           <TouchableOpacity
