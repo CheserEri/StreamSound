@@ -12,16 +12,30 @@
 - **文件夹浏览** - 按目录结构浏览音乐文件
 - **搜索** - 全文搜索歌曲、艺术家、专辑
 - **迷你播放器** - 类似网易云音乐的底部播放控制栏
+- **系统级媒体控制** - 通知栏、锁屏、蓝牙耳机控制
+- **音频缓存** - LRU 淘汰策略的本地音频缓存
 
 ## 技术栈
 
-### 客户端 (app/)
+### Compose 客户端 (composeApp/) — 推荐
+
+- Kotlin Multiplatform + Jetpack Compose Multiplatform
+- [Salt UI](https://github.com/Moriafly/SaltUI) 组件库
+- Media3 ExoPlayer（音频播放 + MediaSession）
+- Navigation 3（导航）
+- Ktor Client（网络请求）
+- Coil（图片加载）
+- multiplatform-settings（本地存储）
+
+### React Native 客户端 (app/)
+
 - React Native 0.76
 - react-native-track-player（音频播放）
 - Zustand（状态管理）
 - @react-navigation/native（导航）
 
 ### 服务端 (server/)
+
 - Fastify（HTTP 框架）
 - better-sqlite3（数据库）
 - music-metadata（音频元数据提取）
@@ -37,7 +51,16 @@ npm install
 npm run dev
 ```
 
-### 客户端
+### Compose 客户端（推荐）
+
+用 Android Studio 打开项目根目录，运行 `composeApp` 模块。
+
+```bash
+# 或命令行构建
+./gradlew :composeApp:assembleDebug
+```
+
+### React Native 客户端
 
 ```bash
 cd app
@@ -45,12 +68,26 @@ npm install
 npm run android
 ```
 
-### 构建 APK
+## 项目结构
 
-```bash
-cd app
-npm run apk:debug   # Debug 版本
-npm run apk:release # Release 版本
+```
+StreamSound/
+├── composeApp/          # Compose Multiplatform 客户端（Kotlin）
+│   ├── src/commonMain/  # 跨平台代码
+│   │   ├── model/       # 数据模型
+│   │   ├── navigation/  # 路由定义
+│   │   ├── network/     # API 客户端
+│   │   ├── playback/    # 播放器接口
+│   │   ├── service/     # 本地存储
+│   │   ├── store/       # 状态管理 (StateFlow)
+│   │   ├── ui/component/# 可复用组件
+│   │   ├── ui/screen/   # 页面
+│   │   └── util/        # 工具函数
+│   └── src/androidMain/ # Android 平台代码
+│       └── playback/    # Media3 播放服务
+├── app/                 # React Native 客户端
+├── server/              # Node.js 服务端
+└── gradle/              # Gradle 版本目录
 ```
 
 ## 配置

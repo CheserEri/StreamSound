@@ -2,6 +2,53 @@
 
 All notable changes to StreamSound are documented in this file.
 
+## [0.3.0-alpha.1] - 2026-07-07
+
+### Added
+- **Compose Multiplatform 客户端** (`composeApp/`) — 全新 KMP + Jetpack Compose Multiplatform 实现
+  - 使用 [Salt UI](https://github.com/Moriafly/SaltUI) 组件库构建全部 10 个页面
+  - 页面: 登录、音乐库、文件夹、播放器、队列、搜索、收藏、历史、设置、管理
+  - Navigation 3 类型安全导航
+  - Ktor Client 网络层 + Bearer token 自动刷新
+  - StateFlow 响应式状态管理
+- **Media3 系统级播放控制**
+  - ExoPlayer 实际音频播放（替代模拟进度）
+  - MediaSessionService 通知栏/锁屏/蓝牙 AVRCP 控制
+  - 音频焦点管理（其他应用播放时自动暂停）
+  - 耳机拔出自动暂停
+  - OkHttp 数据源 + 动态 Bearer token 注入
+- **音频缓存**
+  - SimpleCache + LRU 淘汰策略
+  - 可配置缓存上限（128/256/512/1024 MB）
+- **Android 适配**（参照 Salt UI）
+  - `edgeToEdge()` 全面屏适配（刘海屏、透明系统栏）
+  - `safeMainCompat` 小米 HyperOS 导航栏闪烁兼容
+  - Cupertino 风格弹性滚动
+  - 状态栏前景色控制
+  - `windowBackground=null` 主题优化
+- **播放器增强**
+  - 封面主色自适应渐变背景（`generatePlayerGradient`）
+  - 播放模式同步到 ExoPlayer（顺序/随机/单曲循环）
+  - 歌词/封面点击切换
+  - 心形收藏弹跳动画
+- **交互完善**
+  - 注册成功反馈 + 自动切换登录模式
+  - 播放队列删除功能
+  - 服务器地址设置内可编辑
+  - 文件夹列表分页加载（无限滚动）
+
+### Changed
+- `PlayerStateFlow` 从模拟进度轮询改为委托给 PlatformPlayer
+- `App.kt` 主题从硬编码深色改为动态读取 SettingsStateFlow
+- `formatProgress` 标记为 `@Deprecated`，委托给 `formatDuration`
+
+### Fixed
+- 播放模式（随机/单曲循环）未同步到实际播放器
+- 缓存设置 UI 存在但无实际实现
+- `coverDominantColor` 获取后未用于播放器背景
+- AnimatedHeartButton 点击无动画效果
+- PlaybackService + PlayerConnector 双重事件监听
+
 ## [0.2.0-alpha.14] - 2026-05-02
 
 ### Reverted
