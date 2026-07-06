@@ -36,3 +36,12 @@ app/android/app/build/
 app/android/build/
 app/android/.gradle/
 app/android/app/.gradle/
+
+# Gradle (KMP/Compose)
+.gradle/
+build/
+local.properties
+*.iml
+
+# Claude
+.claude/
