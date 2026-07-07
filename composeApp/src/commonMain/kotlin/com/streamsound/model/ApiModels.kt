@@ -41,6 +41,11 @@ data class LoginResponse(
 )
 
 @Serializable
+data class RefreshTokenResponse(
+    val accessToken: String
+)
+
+@Serializable
 data class RegisterRequest(
     val username: String,
     val password: String
@@ -49,7 +54,10 @@ data class RegisterRequest(
 @Serializable
 data class RegisterResponse(
     val message: String,
-    val user: User? = null
+    val id: Int? = null,
+    val username: String? = null,
+    val role: UserRole? = null,
+    val approved: Boolean? = null
 )
 
 @Serializable

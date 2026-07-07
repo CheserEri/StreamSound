@@ -8,6 +8,6 @@ object HistoryApi {
     suspend fun getHistory(limit: Int = 50): List<HistoryTrack> {
         return ApiClient.client.get("/history") {
             parameter("limit", limit)
-        }.body<ApiResponse<List<HistoryTrack>>>().data
+        }.body<PaginatedResponse<HistoryTrack>>().data
     }
 }

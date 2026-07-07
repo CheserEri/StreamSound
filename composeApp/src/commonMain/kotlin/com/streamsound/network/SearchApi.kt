@@ -1,5 +1,6 @@
 package com.streamsound.network
 
+import com.streamsound.model.ApiResponse
 import com.streamsound.model.SearchResult
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -9,6 +10,6 @@ object SearchApi {
         return ApiClient.client.get("/search") {
             parameter("q", query)
             parameter("limit", limit)
-        }.body()
+        }.body<ApiResponse<SearchResult>>().data
     }
 }

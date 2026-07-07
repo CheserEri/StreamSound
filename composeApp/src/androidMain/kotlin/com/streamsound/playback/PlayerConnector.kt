@@ -77,6 +77,7 @@ object PlayerConnector {
 
         val mediaItems = tracks.map { track ->
             val streamUrl = "${serverUrl.removeSuffix("/")}/stream/${track.id}"
+            val coverUrl = "${serverUrl.removeSuffix("/")}/covers/${track.id}"
             MediaItem.Builder()
                 .setMediaId(track.id.toString())
                 .setUri(streamUrl)
@@ -87,7 +88,7 @@ object PlayerConnector {
                         .setAlbumTitle(track.album)
                         .setArtworkUri(
                             if (track.hasCover)
-                                Uri.parse("${serverUrl.removeSuffix("/")}/library/tracks/${track.id}/cover")
+                                Uri.parse(coverUrl)
                             else null
                         )
                         .build()

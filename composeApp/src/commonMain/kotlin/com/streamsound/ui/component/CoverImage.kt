@@ -70,11 +70,11 @@ fun CoverImage(
         modifier = modifier.size(size),
         contentAlignment = Alignment.Center
     ) {
-        val serverUrl = ApiClient.getServerUrl()
+        val serverUrl = ApiClient.getServerUrl().removeSuffix("/")
         val token = StorageService.getAccessToken()
         AsyncImage(
             model = coil3.request.ImageRequest.Builder(coil3.PlatformContext)
-                .data("$serverUrl/library/tracks/$trackId/cover")
+                .data("$serverUrl/covers/$trackId")
                 .header("Authorization", "Bearer $token")
                 .build(),
             contentDescription = null,

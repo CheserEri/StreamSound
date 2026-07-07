@@ -46,7 +46,7 @@ object AuthStateFlow {
             ApiClient.setServerUrl(serverUrl)
             val response = ApiClient.client.post("/auth/login") {
                 setBody(LoginRequest(username, password))
-            }.body<LoginResponse>()
+            }.body<ApiResponse<LoginResponse>>().data
             StorageService.setAccessToken(response.accessToken)
             StorageService.setRefreshToken(response.refreshToken)
             StorageService.setUserId(response.user.id)
@@ -70,7 +70,7 @@ object AuthStateFlow {
             ApiClient.setServerUrl(serverUrl)
             val response = ApiClient.client.post("/auth/register") {
                 setBody(RegisterRequest(username, password))
-            }.body<RegisterResponse>()
+            }.body<ApiResponse<RegisterResponse>>().data
             _isLoading.value = false
             response.message
         } catch (e: Exception) {
