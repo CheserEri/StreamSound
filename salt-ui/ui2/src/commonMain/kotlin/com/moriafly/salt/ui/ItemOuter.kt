@@ -1,0 +1,205 @@
+/*
+ * Salt UI
+ * Copyright (C) 2023 Moriafly
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ */
+
+@file:Suppress("unused")
+
+package com.moriafly.salt.ui
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+
+/**
+ * Build content interface title text, out of [RoundedColumn].
+ */
+@Composable
+fun ItemOuterTitle(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        text = text,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(
+                start = SaltTheme.dimens.padding * 2,
+                top = SaltTheme.dimens.padding * 0.5f + SaltTheme.dimens.subPadding,
+                end = SaltTheme.dimens.padding * 2,
+                bottom = (SaltTheme.dimens.subPadding - SaltTheme.dimens.padding * 0.5f)
+                    .coerceAtLeast(0.dp)
+            ),
+        color = SaltTheme.colors.subText,
+        style = SaltTheme.textStyles.sub
+    )
+}
+
+/**
+ * A hint text component designed for use outside of a [RoundedColumn].
+ *
+ * Provides standard styling and spacing for external descriptive text.
+ */
+@Composable
+fun ItemOuterTip(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        text = text,
+        modifier = Modifier
+            .padding(
+                horizontal = SaltTheme.dimens.padding * 2f,
+                vertical = SaltTheme.dimens.padding * 0.5f
+            ),
+        color = SaltTheme.colors.subText,
+        style = SaltTheme.textStyles.sub
+    )
+}
+
+/**
+ * Can replace [ItemTitle].
+ */
+@UnstableSaltUiApi
+@Composable
+fun ItemOuterLargeTitle(
+    text: String,
+    sub: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(
+                horizontal = SaltTheme.dimens.padding * 2,
+                vertical =
+                    SaltTheme.dimens.padding * 3
+            ),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = text,
+            textAlign = TextAlign.Center,
+            style = SaltTheme.textStyles.largeTitle
+        )
+        Spacer(modifier = Modifier.height(SaltTheme.dimens.padding * 1.5f))
+        Text(
+            text = sub,
+            textAlign = TextAlign.Center,
+            style = SaltTheme.textStyles.paragraph
+        )
+    }
+}
+
+/**
+ * The outer edit item.
+ *
+ * @param text text.
+ * @param onChange called when text changed.
+ * @param modifier modifier.
+ * @param hint hint.
+ * @param hintColor color of [hint] text.
+ * @param readOnly readOnly.
+ * @param keyboardOptions keyboardOptions.
+ * @param keyboardActions keyboardActions.
+ * @param visualTransformation visualTransformation.
+ * @param actionContent actionContent.
+ */
+@UnstableSaltUiApi
+@Composable
+fun ItemOuterEdit(
+    text: String,
+    onChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    hint: String? = null,
+    hintColor: Color = SaltTheme.colors.subText,
+    readOnly: Boolean = false,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    actionContent: (@Composable () -> Unit)? = null
+) {
+    RoundedColumn {
+        ItemEdit(
+            text = text,
+            onChange = onChange,
+            modifier = modifier,
+            hint = hint,
+            hintColor = hintColor,
+            readOnly = readOnly,
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions,
+            visualTransformation = visualTransformation,
+            actionContent = actionContent
+        )
+    }
+}
+
+/**
+ * For Item Outer.
+ */
+@Suppress("ktlint:compose:modifier-missing-check")
+@Composable
+fun ItemOuterTextButton(
+    onClick: () -> Unit,
+    text: String,
+    enabled: Boolean = true,
+    textColor: Color = SaltTheme.colors.onHighlight,
+    backgroundColor: Color = SaltTheme.colors.highlight
+) {
+    TextButton(
+        onClick = onClick,
+        text = text,
+        modifier = Modifier
+            .fillMaxWidth()
+            .outerPadding(),
+        enabled = enabled,
+        textColor = textColor,
+        backgroundColor = backgroundColor
+    )
+}
+
+/**
+ * Build vertical spacing [SaltDimens.padding] for the Item Outer.
+ */
+@Suppress("ktlint:compose:modifier-missing-check")
+@Composable
+fun ItemOuterSpacer() {
+    Spacer(
+        modifier = Modifier
+            .height(SaltTheme.dimens.padding)
+    )
+}
+
+/**
+ * Build half vertical spacing for the Item Outer.
+ */
+@Suppress("ktlint:compose:modifier-missing-check")
+@Composable
+fun ItemOuterHalfSpacer() {
+    Spacer(
+        modifier = Modifier
+            .height(SaltTheme.dimens.padding * 0.5f)
+    )
+}

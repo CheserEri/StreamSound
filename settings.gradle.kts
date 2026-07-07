@@ -25,7 +25,5 @@ dependencyResolutionManagement {
 include(":composeApp")
 
 // SaltUI as local project dependency
-include(":core")
+include(":salt-ui:core")
 include(":salt-ui:ui2")
-project(":core").projectDir = file("../Salt/SaltUI/core")
-project(":salt-ui:ui2").projectDir = file("../Salt/SaltUI/ui2")
