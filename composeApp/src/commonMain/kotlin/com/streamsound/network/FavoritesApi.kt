@@ -8,7 +8,7 @@ object FavoritesApi {
     suspend fun getFavorites(limit: Int = 100): List<FavoriteTrack> {
         return ApiClient.client.get("/favorites") {
             parameter("limit", limit)
-        }.body<ApiResponse<List<FavoriteTrack>>>().data
+        }.body<PaginatedResponse<FavoriteTrack>>().data
     }
 
     suspend fun addFavorite(trackId: Int) {

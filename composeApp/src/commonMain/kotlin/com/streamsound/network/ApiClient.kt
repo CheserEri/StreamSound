@@ -1,7 +1,10 @@
 package com.streamsound.network
 
+import com.streamsound.model.ApiResponse
+import com.streamsound.model.RefreshTokenResponse
 import com.streamsound.service.StorageService
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.auth.*
 import io.ktor.client.plugins.auth.providers.*
@@ -53,10 +56,9 @@ object ApiClient {
                             setBody(mapOf("refreshToken" to refreshToken))
                             markAsRefreshTokenRequest()
                         }
-                        val body = response.call.body<com.streamsound.model.LoginResponse>()
+                        val body = response.call.body<ApiResponse<RefreshTokenResponse>>().data
                         StorageService.setAccessToken(body.accessToken)
-                        StorageService.setRefreshToken(body.refreshToken)
-                        BearerTokens(body.accessToken, body.refreshToken)
+                        BearerTokens(body.accessToken, refreshToken)
                     } catch (_: Exception) {
                         StorageService.clearAuth()
                         null
