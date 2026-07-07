@@ -7,10 +7,10 @@
 StreamSound 采用 Monorepo，前后端代码统一在同一仓库管理：
 
 ```
-streamsound/
+StreamSound/
+├── composeApp/      # 客户端（Kotlin Multiplatform + Compose）
 ├── server/          # 后端（Node.js + Fastify）
-├── app/             # 前端（React Native）
-├── docs/            # 所有文档（PRD、架构、API Spec 等）
+├── gradle/          # Gradle 版本目录
 └── CONTRIBUTING.md
 ```
 
@@ -256,9 +256,8 @@ node_modules/
 
 # 编译产物
 server/dist/
-app/android/build/
-app/ios/build/
-app/.expo/
+.gradle/
+build/
 
 # 系统文件
 .DS_Store
