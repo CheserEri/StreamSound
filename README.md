@@ -17,7 +17,7 @@
 
 ## 技术栈
 
-### Compose 客户端 (composeApp/) — 推荐
+### 客户端 (composeApp/)
 
 - Kotlin Multiplatform + Jetpack Compose Multiplatform
 - [Salt UI](https://github.com/Moriafly/SaltUI) 组件库
@@ -26,13 +26,6 @@
 - Ktor Client（网络请求）
 - Coil（图片加载）
 - multiplatform-settings（本地存储）
-
-### React Native 客户端 (app/)
-
-- React Native 0.76
-- react-native-track-player（音频播放）
-- Zustand（状态管理）
-- @react-navigation/native（导航）
 
 ### 服务端 (server/)
 
@@ -51,21 +44,13 @@ npm install
 npm run dev
 ```
 
-### Compose 客户端（推荐）
+### 客户端
 
 用 Android Studio 打开项目根目录，运行 `composeApp` 模块。
 
 ```bash
 # 或命令行构建
-./gradlew :composeApp:assembleDebug
-```
-
-### React Native 客户端
-
-```bash
-cd app
-npm install
-npm run android
+./gradlew :composeApp:installDebug
 ```
 
 ## 项目结构
@@ -85,7 +70,6 @@ StreamSound/
 │   │   └── util/        # 工具函数
 │   └── src/androidMain/ # Android 平台代码
 │       └── playback/    # Media3 播放服务
-├── app/                 # React Native 客户端
 ├── server/              # Node.js 服务端
 └── gradle/              # Gradle 版本目录
 ```
@@ -103,7 +87,7 @@ StreamSound/
 
 ## 版本
 
-当前版本：`0.2.0-alpha.5`
+当前版本：`0.3.0-alpha.1`
 
 ## 许可证
 

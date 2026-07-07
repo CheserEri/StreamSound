@@ -1,13 +1,24 @@
 # StreamSound 开发进度
 
-## 当前版本: `0.2.0-alpha.2`
+## 当前版本: `0.3.0-alpha.1`
+
+> **Note**: React Native 客户端 (`app/`) 已被 Compose Multiplatform 客户端 (`composeApp/`) 替代并移除。
 
 ---
 
 ## 已完成
 
-### Phase 0 — 项目脚手架 ✅
-- [x] 创建 Monorepo 目录结构 (`server/`, `app/`, `docs/`)
+### Phase 0 — Compose Multiplatform 重写 ✅
+- [x] `composeApp/` — KMP + Jetpack Compose Multiplatform 客户端
+- [x] Salt UI 组件库集成
+- [x] 全部 10 个页面实现（登录、音乐库、文件夹、播放器、队列、搜索、收藏、历史、设置、管理）
+- [x] Media3 ExoPlayer 实际音频播放
+- [x] MediaSessionService 系统级媒体控制（通知栏/锁屏/蓝牙）
+- [x] 音频缓存（SimpleCache + LRU 淘汰）
+- [x] Android 全面屏适配 + 小米 HyperOS 兼容
+- [x] 播放模式同步、封面主色渐变、注册反馈、队列删除、分页加载
+
+### Phase 0b — 项目脚手架（旧版，已弃用）
 - [x] `.gitignore` 配置
 - [x] `server/package.json` — 依赖声明 (fastify, better-sqlite3, music-metadata, bcrypt, zod 等)
 - [x] `server/tsconfig.json` — TypeScript 配置 (ES2022, NodeNext, strict)
