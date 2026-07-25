@@ -1,26 +1,27 @@
 package com.streamsound.ui.screen
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.moriafly.salt.ui.*
 import com.streamsound.model.TrackListItem
-import com.streamsound.navigation.LocalNavBackStack
 import com.streamsound.navigation.ScreenRoute
 import com.streamsound.network.LibraryApi
 import com.streamsound.store.PlayerStateFlow
-import com.streamsound.ui.component.MiniPlayer
-import com.streamsound.ui.component.TrackItem
+import com.streamsound.ui.component.*
+import com.streamsound.ui.theme.StreamSoundColors
 
-@OptIn(UnstableSaltUiApi::class)
+/**
+ * 文件夹内歌曲列表（分页加载）
+ */
 @Composable
 fun FolderScreen(
     folderId: Int,
     folderName: String
 ) {
-    val navBackStack = LocalNavBackStack.current
     var tracks by remember { mutableStateOf<List<TrackListItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var isLoadingMore by remember { mutableStateOf(false) }
@@ -28,6 +29,7 @@ fun FolderScreen(
     var error by remember { mutableStateOf<String?>(null) }
     val currentIndex by PlayerStateFlow.currentIndex.collectAsState()
     val queue by PlayerStateFlow.queue.collectAsState()
+    val navBackStack = com.streamsound.navigation.LocalNavBackStack.current
 
     val pageSize = 50
 
@@ -46,40 +48,39 @@ fun FolderScreen(
         isLoading = false
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        BasicScreenBox(title = folderName) {
-            if (isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(text = "加载中...", color = SaltTheme.colors.subText)
-                }
-                return@BasicScreenBox
+    GlassScreen(
+        title = folderName,
+        subtitle = if (!isLoading && error == null) "${tracks.size} 首" else null,
+        showBack = true
+    ) {
+        when {
+            isLoading -> LoadingState(text = "正在加载歌曲...")
+            error != null -> Box(
+                modifier = Modifier.fillMaxSize().padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                GlassBanner(text = error ?: "加载失败", type = GlassBannerType.Error)
             }
-
-            error?.let {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(text = it, color = SaltTheme.colors.subText)
-                }
-                return@BasicScreenBox
-            }
-
-            com.moriafly.salt.ui.lazy.LazyColumn(
+            tracks.isEmpty() -> EmptyState(
+                icon = AppIcons.MusicNote,
+                title = "文件夹为空",
+                hint = "该文件夹下没有歌曲"
+            )
+            else -> LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = SaltDimens.RoundedColumnInListEdgePadding)
+                contentPadding = PaddingValues(top = 4.dp, bottom = chromeBottomSpace)
             ) {
                 items(tracks.size) { index ->
                     val track = tracks[index]
-                    val isCurrentTrack = queue.getOrNull(currentIndex)?.id == track.id
-                    RoundedColumn(type = RoundedColumnType.InList) {
-                        TrackItem(
-                            track = track,
-                            isActive = isCurrentTrack,
-                            onClick = {
-                                PlayerStateFlow.setQueue(tracks, index)
-                                navBackStack.add(ScreenRoute.Player(track.id))
-                            }
-                        )
-                    }
-                    // Load more when near end
+                    TrackItem(
+                        track = track,
+                        isActive = queue.getOrNull(currentIndex)?.id == track.id,
+                        onClick = {
+                            PlayerStateFlow.setQueue(tracks, index)
+                            navBackStack.add(ScreenRoute.Player(track.id))
+                        }
+                    )
+                    // 滚动接近末尾时分页加载
                     if (index >= tracks.size - 5 && hasMore && !isLoadingMore) {
                         LaunchedEffect(index) {
                             isLoadingMore = true
@@ -95,23 +96,15 @@ fun FolderScreen(
                             modifier = Modifier.fillMaxWidth().padding(16.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(text = "加载更多...", color = SaltTheme.colors.subText)
+                            CircularProgressIndicator(
+                                color = StreamSoundColors.accent,
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(24.dp)
+                            )
                         }
                     }
                 }
-
-                item { Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.safeMainCompat)) }
             }
-        }
-
-        if (queue.isNotEmpty()) {
-            MiniPlayer(
-                onNavigateToPlayer = {
-                    navBackStack.add(ScreenRoute.Player(PlayerStateFlow.currentTrack?.id ?: 0))
-                },
-                onNavigateToQueue = { navBackStack.add(ScreenRoute.Queue) },
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
         }
     }
 }

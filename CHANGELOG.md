@@ -2,6 +2,29 @@
 
 All notable changes to StreamSound are documented in this file.
 
+## [Unreleased]
+
+### Changed
+- **UI 全面重设计：液态玻璃深蓝（Liquid Glass Deep Blue）**
+  - 视觉语言与 App Logo 统一：深夜蓝渐变底 + 天蓝 `#38bdf8` 强调色 + 玻璃拟态卡片/描边/氛围光
+  - 移除 Salt UI 依赖，全部页面迁移至自建设计系统（`ui/theme/StreamSoundTheme.kt` + `ui/component/GlassComponents.kt`）
+  - 新组件：`GlassCard` / `GlassListItem` / `GlassButton` / `GlassTextField` / `GlassSwitch` / `GlassSegmented` / `GlassBanner` / `GlassBadge` / `GlassTabBar` / `AppTopBar` / `EmptyState` / `LoadingState`
+  - 播放系组件（TrackItem、MiniPlayer、AnimatedPlayButton、GlowSlider、DiscCover、LyricsView）统一为深蓝玻璃配色，替换原 Spotify 绿
+- **导航结构改为底部 Tab**
+  - 首页 / 搜索 / 收藏 / 设置 四个 Tab（`GlassTabBar`），二级页面（文件夹、历史、管理、队列）正常入栈
+  - MiniPlayer 改为全局悬浮胶囊（叠于 TabBar 上方），不再由各页面手动叠加
+  - 登录页与全屏播放器不显示 Tab 壳
+- **播放器细节优化**
+  - 切歌时自动刷新歌词 / 收藏态 / 封面主色（详情随当前曲目变化）
+  - 非顺序播放模式图标以强调色高亮
+- **搜索页**：300ms 防抖实时搜索，替换手动点击搜索按钮
+- **播放历史**：列表副标题显示相对时间（如 "3 分钟前"）
+- **设置页**：歌词字号与缓存上限改为分段选择器；移除明暗主题开关（液态玻璃为全局唯一主题）
+
+### Removed
+- `salt-ui` 本地模块依赖（`composeApp` 不再依赖 `:salt-ui:ui2`，模块源码保留）
+- Cupertino 弹性滚动注入、SaltTheme 包装、`safeMainCompat` 兼容层
+
 ## [0.3.0-alpha.1] - 2026-07-07
 
 ### Added

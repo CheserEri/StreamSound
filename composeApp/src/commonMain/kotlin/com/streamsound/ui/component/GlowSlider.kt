@@ -13,14 +13,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import com.streamsound.ui.theme.StreamSoundColors
 
 @Composable
 fun GlowSlider(
     value: Double,
     maximumValue: Double,
     onSeek: (Double) -> Unit,
-    activeColor: Color = Color.White,
-    inactiveColor: Color = Color(0xFF333333),
+    activeColor: Color = StreamSoundColors.accent,
+    inactiveColor: Color = StreamSoundColors.sliderInactive,
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current

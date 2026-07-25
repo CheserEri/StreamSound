@@ -2,14 +2,12 @@ package com.streamsound.ui.component
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.Icon
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.moriafly.salt.ui.Icon
-import com.moriafly.salt.ui.noRippleClickable
 import com.streamsound.network.FavoritesApi
 import com.streamsound.ui.theme.StreamSoundColors
 import kotlinx.coroutines.launch
@@ -25,7 +23,7 @@ fun AnimatedHeartButton(
     var isLoading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    // Animate scale on toggle
+    // 切换时的弹簧放大动画
     var animateToggle by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         targetValue = if (animateToggle) 1.3f else 1f,
@@ -33,15 +31,14 @@ fun AnimatedHeartButton(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessHigh
         ),
-        finishedListener = { animateToggle = false }
+        finishedListener = { animateToggle = false },
+        label = "heartScale"
     )
 
     Icon(
-        painter = rememberVectorPainter(
-            if (isFavorited) AppIcons.HeartFilled else AppIcons.HeartOutline
-        ),
-        contentDescription = if (isFavorited) "Unfavorite" else "Favorite",
-        tint = if (isFavorited) StreamSoundColors.heartFilled else StreamSoundColors.heartOutline,
+        imageVector = if (isFavorited) AppIcons.HeartFilled else AppIcons.HeartOutline,
+        contentDescription = if (isFavorited) "取消收藏" else "收藏",
+        tint = if (isFavorited) StreamSoundColors.heart else StreamSoundColors.textMuted,
         modifier = Modifier
             .size(size)
             .graphicsLayer {

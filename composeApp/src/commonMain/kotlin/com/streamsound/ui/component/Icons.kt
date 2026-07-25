@@ -419,4 +419,219 @@ object AppIcons {
             }
         }.build()
     }
+
+    val Home: ImageVector by lazy {
+        ImageVector.Builder("Home", 24f.dp, 24f.dp, 24f, 24f).apply {
+            path(fill = SolidColor(Color.White)) {
+                moveTo(10f, 20f)
+                verticalLineTo(14f)
+                horizontalLineTo(14f)
+                verticalLineTo(20f)
+                horizontalLineTo(19f)
+                verticalLineTo(12f)
+                horizontalLineTo(22f)
+                lineTo(12f, 3f)
+                lineTo(2f, 12f)
+                horizontalLineTo(5f)
+                verticalLineTo(20f)
+                close()
+            }
+        }.build()
+    }
+
+    val Person: ImageVector by lazy {
+        ImageVector.Builder("Person", 24f.dp, 24f.dp, 24f, 24f).apply {
+            path(fill = SolidColor(Color.White)) {
+                moveTo(12f, 12f)
+                curveTo(14.21f, 12f, 16f, 10.21f, 16f, 8f)
+                reflectiveCurveTo(14.21f, 4f, 12f, 4f)
+                reflectiveCurveTo(8f, 5.79f, 8f, 8f)
+                reflectiveCurveTo(9.79f, 12f, 12f, 12f)
+                close()
+                moveTo(12f, 14f)
+                curveTo(9.33f, 14f, 4f, 15.34f, 4f, 18f)
+                verticalLineTo(20f)
+                horizontalLineTo(20f)
+                verticalLineTo(18f)
+                curveTo(20f, 15.34f, 14.67f, 14f, 12f, 14f)
+                close()
+            }
+        }.build()
+    }
+
+    val Album: ImageVector by lazy {
+        ImageVector.Builder("Album", 24f.dp, 24f.dp, 24f, 24f).apply {
+            path(fill = SolidColor(Color.White)) {
+                moveTo(12f, 2f)
+                curveTo(6.48f, 2f, 2f, 6.48f, 2f, 12f)
+                reflectiveCurveTo(6.48f, 22f, 12f, 22f)
+                reflectiveCurveTo(22f, 17.52f, 22f, 12f)
+                reflectiveCurveTo(17.52f, 2f, 12f, 2f)
+                close()
+                moveTo(12f, 16.5f)
+                curveTo(9.51f, 16.5f, 7.5f, 14.49f, 7.5f, 12f)
+                reflectiveCurveTo(9.51f, 7.5f, 12f, 7.5f)
+                reflectiveCurveTo(16.5f, 9.51f, 16.5f, 12f)
+                reflectiveCurveTo(14.49f, 16.5f, 12f, 16.5f)
+                close()
+                moveTo(12f, 11f)
+                curveTo(11.45f, 11f, 11f, 11.45f, 11f, 12f)
+                reflectiveCurveTo(11.45f, 13f, 12f, 13f)
+                reflectiveCurveTo(13f, 12.55f, 13f, 12f)
+                reflectiveCurveTo(12.55f, 11f, 12f, 11f)
+                close()
+            }
+        }.build()
+    }
+
+    val Close: ImageVector by lazy {
+        ImageVector.Builder("Close", 24f.dp, 24f.dp, 24f, 24f).apply {
+            path(fill = SolidColor(Color.White)) {
+                moveTo(19f, 6.41f)
+                lineTo(17.59f, 5f)
+                lineTo(12f, 10.59f)
+                lineTo(6.41f, 5f)
+                lineTo(5f, 6.41f)
+                lineTo(10.59f, 12f)
+                lineTo(5f, 17.59f)
+                lineTo(6.41f, 19f)
+                lineTo(12f, 13.41f)
+                lineTo(17.59f, 19f)
+                lineTo(19f, 17.59f)
+                lineTo(13.41f, 12f)
+                close()
+            }
+        }.build()
+    }
+
+    val Logout: ImageVector by lazy {
+        ImageVector.Builder("Logout", 24f.dp, 24f.dp, 24f, 24f).apply {
+            path(fill = SolidColor(Color.White)) {
+                moveTo(17f, 7f)
+                lineTo(15.59f, 8.41f)
+                lineTo(18.17f, 11f)
+                horizontalLineTo(8f)
+                verticalLineTo(13f)
+                horizontalLineTo(18.17f)
+                lineTo(15.59f, 15.58f)
+                lineTo(17f, 17f)
+                lineTo(22f, 12f)
+                close()
+                moveTo(4f, 5f)
+                horizontalLineTo(12f)
+                verticalLineTo(3f)
+                horizontalLineTo(4f)
+                curveTo(2.9f, 3f, 2f, 3.9f, 2f, 5f)
+                verticalLineTo(19f)
+                curveTo(2f, 20.1f, 2.9f, 21f, 4f, 21f)
+                horizontalLineTo(12f)
+                verticalLineTo(19f)
+                horizontalLineTo(4f)
+                close()
+            }
+        }.build()
+    }
+
+    val Refresh: ImageVector by lazy {
+        ImageVector.Builder("Refresh", 24f.dp, 24f.dp, 24f, 24f).apply {
+            path(fill = SolidColor(Color.White)) {
+                moveTo(17.65f, 6.35f)
+                curveTo(16.2f, 4.9f, 14.21f, 4f, 12f, 4f)
+                curveTo(7.58f, 4f, 4.01f, 7.58f, 4.01f, 12f)
+                reflectiveCurveTo(7.58f, 20f, 12f, 20f)
+                curveTo(15.73f, 20f, 18.84f, 17.45f, 19.73f, 14f)
+                horizontalLineTo(17.65f)
+                curveTo(16.83f, 16.33f, 14.61f, 18f, 12f, 18f)
+                curveTo(8.69f, 18f, 6f, 15.31f, 6f, 12f)
+                reflectiveCurveTo(8.69f, 6f, 12f, 6f)
+                curveTo(13.66f, 6f, 15.14f, 6.69f, 16.22f, 7.78f)
+                lineTo(13f, 11f)
+                horizontalLineTo(20f)
+                verticalLineTo(4f)
+                close()
+            }
+        }.build()
+    }
+
+    val Check: ImageVector by lazy {
+        ImageVector.Builder("Check", 24f.dp, 24f.dp, 24f, 24f).apply {
+            path(fill = SolidColor(Color.White)) {
+                moveTo(9f, 16.17f)
+                lineTo(4.83f, 12f)
+                lineTo(3.41f, 13.41f)
+                lineTo(9f, 19f)
+                lineTo(21f, 7f)
+                lineTo(19.59f, 5.59f)
+                close()
+            }
+        }.build()
+    }
+
+    val Eye: ImageVector by lazy {
+        ImageVector.Builder("Eye", 24f.dp, 24f.dp, 24f, 24f).apply {
+            path(fill = SolidColor(Color.White)) {
+                moveTo(12f, 4.5f)
+                curveTo(7f, 4.5f, 2.73f, 7.61f, 1f, 12f)
+                curveTo(2.73f, 16.39f, 7f, 19.5f, 12f, 19.5f)
+                reflectiveCurveTo(21.27f, 16.39f, 23f, 12f)
+                curveTo(21.27f, 7.61f, 17f, 4.5f, 12f, 4.5f)
+                close()
+                moveTo(12f, 17f)
+                curveTo(9.24f, 17f, 7f, 14.76f, 7f, 12f)
+                reflectiveCurveTo(9.24f, 7f, 12f, 7f)
+                reflectiveCurveTo(17f, 9.24f, 17f, 12f)
+                reflectiveCurveTo(14.76f, 17f, 12f, 17f)
+                close()
+                moveTo(12f, 9f)
+                curveTo(10.34f, 9f, 9f, 10.34f, 9f, 12f)
+                reflectiveCurveTo(10.34f, 15f, 12f, 15f)
+                reflectiveCurveTo(15f, 13.66f, 15f, 12f)
+                reflectiveCurveTo(13.66f, 9f, 12f, 9f)
+                close()
+            }
+        }.build()
+    }
+
+    val EyeOff: ImageVector by lazy {
+        ImageVector.Builder("EyeOff", 24f.dp, 24f.dp, 24f, 24f).apply {
+            path(fill = SolidColor(Color.White)) {
+                moveTo(12f, 7f)
+                curveTo(14.76f, 7f, 17f, 9.24f, 17f, 12f)
+                curveTo(17f, 12.65f, 16.87f, 13.26f, 16.64f, 13.83f)
+                lineTo(19.56f, 16.75f)
+                curveTo(21.07f, 15.49f, 22.26f, 13.86f, 23f, 12f)
+                curveTo(21.27f, 7.61f, 17f, 4.5f, 12f, 4.5f)
+                curveTo(10.6f, 4.5f, 9.26f, 4.75f, 8.02f, 5.2f)
+                lineTo(10.18f, 7.36f)
+                curveTo(10.74f, 7.13f, 11.35f, 7f, 12f, 7f)
+                close()
+                moveTo(2f, 4.27f)
+                lineTo(4.28f, 6.55f)
+                lineTo(4.74f, 7.01f)
+                curveTo(3.08f, 8.3f, 1.78f, 10.02f, 1f, 12f)
+                curveTo(2.73f, 16.39f, 7f, 19.5f, 12f, 19.5f)
+                curveTo(13.55f, 19.5f, 15.03f, 19.2f, 16.38f, 18.66f)
+                lineTo(16.8f, 19.08f)
+                lineTo(19.73f, 22f)
+                lineTo(21f, 20.73f)
+                lineTo(3.27f, 3f)
+                close()
+                moveTo(7.53f, 9.8f)
+                lineTo(9.08f, 11.35f)
+                curveTo(9.03f, 11.56f, 9f, 11.78f, 9f, 12f)
+                curveTo(9f, 13.66f, 10.34f, 15f, 12f, 15f)
+                curveTo(12.22f, 15f, 12.44f, 14.97f, 12.65f, 14.92f)
+                lineTo(14.2f, 16.47f)
+                curveTo(13.53f, 16.8f, 12.79f, 17f, 12f, 17f)
+                curveTo(9.24f, 17f, 7f, 14.76f, 7f, 12f)
+                curveTo(7f, 11.21f, 7.2f, 10.47f, 7.53f, 9.8f)
+                close()
+                moveTo(11.84f, 9.02f)
+                lineTo(14.99f, 12.17f)
+                lineTo(15.01f, 12.01f)
+                curveTo(15.01f, 10.35f, 13.67f, 9.01f, 12.01f, 9.01f)
+                close()
+            }
+        }.build()
+    }
 }
