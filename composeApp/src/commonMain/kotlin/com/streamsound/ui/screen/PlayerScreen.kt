@@ -1,15 +1,15 @@
 package com.streamsound.ui.screen
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.Icon
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.moriafly.salt.ui.*
 import com.streamsound.model.PlayMode
 import com.streamsound.model.TrackDetail
 import com.streamsound.navigation.LocalNavBackStack
@@ -23,7 +23,9 @@ import com.streamsound.ui.theme.StreamSoundColors
 import com.streamsound.util.formatDuration
 import com.streamsound.util.generatePlayerGradient
 
-@OptIn(UnstableSaltUiApi::class)
+/**
+ * 全屏播放器（液态玻璃深蓝）
+ */
 @Composable
 fun PlayerScreen(trackId: Int) {
     val navBackStack = LocalNavBackStack.current
@@ -39,10 +41,12 @@ fun PlayerScreen(trackId: Int) {
     var trackDetail by remember { mutableStateOf<TrackDetail?>(null) }
     var showLyrics by remember { mutableStateOf(false) }
 
-    LaunchedEffect(trackId) {
+    // 跟随当前曲目刷新详情（歌词 / 收藏态 / 封面主色）并上报播放历史
+    val activeTrackId = currentTrack?.id ?: trackId
+    LaunchedEffect(activeTrackId) {
         try {
-            trackDetail = LibraryApi.getTrackDetail(trackId)
-            reportPlayHistory(trackId)
+            trackDetail = LibraryApi.getTrackDetail(activeTrackId)
+            reportPlayHistory(activeTrackId)
         } catch (_: Exception) {}
     }
 
@@ -50,55 +54,63 @@ fun PlayerScreen(trackId: Int) {
         colors = generatePlayerGradient(trackDetail?.coverDominantColor)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize()
-                .windowInsetsPadding(WindowInsets.safeMainCompat.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)),
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Top bar
+            // 顶栏
             Row(
-                modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    painter = rememberVectorPainter(AppIcons.ChevronDown),
-                    contentDescription = "Close",
-                    tint = Color.White,
-                    modifier = Modifier.size(40.dp).noRippleClickable {
-                        navBackStack.removeLastOrNull()
-                    }.padding(8.dp)
+                    imageVector = AppIcons.ChevronDown,
+                    contentDescription = "收起",
+                    tint = StreamSoundColors.playerText,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .noRippleClickable { navBackStack.removeLastOrNull() }
+                        .padding(8.dp)
                 )
                 Spacer(Modifier.weight(1f))
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = currentTrack?.title ?: "",
-                        color = StreamSoundColors.playerText,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1
+                        text = "正在播放",
+                        color = StreamSoundColors.playerHeaderSubtitle,
+                        fontSize = 11.sp,
+                        letterSpacing = 2.sp
                     )
                     Text(
-                        text = currentTrack?.artist ?: "",
-                        color = StreamSoundColors.playerHeaderSubtitle,
-                        fontSize = 12.sp,
-                        maxLines = 1
+                        text = trackDetail?.album ?: currentTrack?.album ?: "",
+                        color = StreamSoundColors.playerText,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 Spacer(Modifier.weight(1f))
                 Icon(
-                    painter = rememberVectorPainter(AppIcons.Queue),
-                    contentDescription = "Queue",
-                    tint = Color.White,
-                    modifier = Modifier.size(40.dp).noRippleClickable {
-                        navBackStack.add(ScreenRoute.Queue)
-                    }.padding(8.dp)
+                    imageVector = AppIcons.Queue,
+                    contentDescription = "播放队列",
+                    tint = StreamSoundColors.playerText,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .noRippleClickable { navBackStack.add(ScreenRoute.Queue) }
+                        .padding(8.dp)
                 )
             }
 
-            Spacer(Modifier.height(16.dp))
-
-            // Cover / Lyrics toggle area
+            // 唱片 / 歌词切换区（点击切换）
             Box(
-                modifier = Modifier.weight(1f).fillMaxWidth(),
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .noRippleClickable { showLyrics = !showLyrics },
                 contentAlignment = Alignment.Center
             ) {
                 if (showLyrics) {
@@ -108,79 +120,64 @@ fun PlayerScreen(trackId: Int) {
                         onLinePress = { time -> PlayerStateFlow.seekTo(time) }
                     )
                 } else {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        DiscCover(
-                            trackId = currentTrack?.id ?: 0,
-                            hasCover = currentTrack?.hasCover ?: false,
-                            size = 280.dp,
-                            isPlaying = isPlaying,
-                            dominantColor = trackDetail?.coverDominantColor
-                        )
-                        Spacer(Modifier.height(24.dp))
-                        // Tap to show lyrics
-                        Text(
-                            text = "点击切换歌词",
-                            color = StreamSoundColors.playerTextMuted,
-                            fontSize = 13.sp,
-                            modifier = Modifier.noRippleClickable { showLyrics = true }
-                        )
-                    }
-                }
-
-                if (showLyrics) {
-                    Text(
-                        text = "点击切换封面",
-                        color = StreamSoundColors.playerTextMuted,
-                        fontSize = 13.sp,
-                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp)
-                            .noRippleClickable { showLyrics = false }
+                    DiscCover(
+                        trackId = activeTrackId,
+                        hasCover = currentTrack?.hasCover ?: false,
+                        size = 280.dp,
+                        isPlaying = isPlaying,
+                        dominantColor = trackDetail?.coverDominantColor
                     )
                 }
             }
 
-            // Track info
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Text(
+                text = if (showLyrics) "点击返回封面" else "点击查看歌词",
+                color = StreamSoundColors.playerTextMuted,
+                fontSize = 12.sp
+            )
+
+            Spacer(Modifier.height(14.dp))
+
+            // 曲目信息 + 收藏
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = currentTrack?.title ?: "",
-                            color = StreamSoundColors.playerText,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1
-                        )
-                        Text(
-                            text = currentTrack?.artist ?: "",
-                            color = StreamSoundColors.playerTextSecondary,
-                            fontSize = 15.sp,
-                            maxLines = 1
-                        )
-                    }
-                    currentTrack?.let { track ->
-                        AnimatedHeartButton(
-                            trackId = track.id,
-                            initialFavorited = trackDetail?.isFavorited ?: false,
-                            size = 28.dp
-                        )
-                    }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = currentTrack?.title ?: "",
+                        color = StreamSoundColors.playerText,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = currentTrack?.artist ?: "",
+                        color = StreamSoundColors.playerTextSecondary,
+                        fontSize = 15.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
+                AnimatedHeartButton(
+                    trackId = activeTrackId,
+                    initialFavorited = trackDetail?.isFavorited ?: false,
+                    size = 28.dp
+                )
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(14.dp))
 
-            // Progress slider
+            // 进度条
             Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp)) {
                 GlowSlider(
                     value = progress,
                     maximumValue = duration,
-                    onSeek = { PlayerStateFlow.seekTo(it) },
-                    activeColor = StreamSoundColors.sliderActive,
-                    inactiveColor = StreamSoundColors.sliderInactive
+                    onSeek = { PlayerStateFlow.seekTo(it) }
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -199,40 +196,45 @@ fun PlayerScreen(trackId: Int) {
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(14.dp))
 
-            // Controls
+            // 控制栏
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Play mode
                 val modeIcon = when (mode) {
                     PlayMode.SEQUENTIAL -> AppIcons.Repeat
                     PlayMode.SHUFFLE -> AppIcons.Shuffle
                     PlayMode.REPEAT -> AppIcons.RepeatOne
                 }
                 Icon(
-                    painter = rememberVectorPainter(modeIcon),
-                    contentDescription = "Mode",
-                    tint = StreamSoundColors.playerTextSecondary,
-                    modifier = Modifier.size(28.dp).noRippleClickable {
-                        PlayerStateFlow.toggleMode()
-                    }
+                    imageVector = modeIcon,
+                    contentDescription = "播放模式",
+                    tint = if (mode == PlayMode.SEQUENTIAL) {
+                        StreamSoundColors.playerTextSecondary
+                    } else {
+                        StreamSoundColors.accent
+                    },
+                    modifier = Modifier
+                        .size(44.dp)
+                        .noRippleClickable { PlayerStateFlow.toggleMode() }
+                        .padding(9.dp)
                 )
 
-                // Previous
                 Icon(
-                    painter = rememberVectorPainter(AppIcons.SkipPrevious),
-                    contentDescription = "Previous",
-                    tint = Color.White,
-                    modifier = Modifier.size(36.dp).noRippleClickable {
-                        PlayerStateFlow.skipToPrevious()
-                    }
+                    imageVector = AppIcons.SkipPrevious,
+                    contentDescription = "上一首",
+                    tint = StreamSoundColors.playerText,
+                    modifier = Modifier
+                        .size(52.dp)
+                        .noRippleClickable { PlayerStateFlow.skipToPrevious() }
+                        .padding(8.dp)
                 )
 
-                // Play/Pause
                 AnimatedPlayButton(
                     isPlaying = isPlaying,
                     onClick = {
@@ -241,28 +243,28 @@ fun PlayerScreen(trackId: Int) {
                     size = 68.dp
                 )
 
-                // Next
                 Icon(
-                    painter = rememberVectorPainter(AppIcons.SkipNext),
-                    contentDescription = "Next",
-                    tint = Color.White,
-                    modifier = Modifier.size(36.dp).noRippleClickable {
-                        PlayerStateFlow.skipToNext()
-                    }
+                    imageVector = AppIcons.SkipNext,
+                    contentDescription = "下一首",
+                    tint = StreamSoundColors.playerText,
+                    modifier = Modifier
+                        .size(52.dp)
+                        .noRippleClickable { PlayerStateFlow.skipToNext() }
+                        .padding(8.dp)
                 )
 
-                // Queue
                 Icon(
-                    painter = rememberVectorPainter(AppIcons.Queue),
-                    contentDescription = "Queue",
+                    imageVector = AppIcons.Queue,
+                    contentDescription = "播放队列",
                     tint = StreamSoundColors.playerTextSecondary,
-                    modifier = Modifier.size(28.dp).noRippleClickable {
-                        navBackStack.add(ScreenRoute.Queue)
-                    }
+                    modifier = Modifier
+                        .size(44.dp)
+                        .noRippleClickable { navBackStack.add(ScreenRoute.Queue) }
+                        .padding(9.dp)
                 )
             }
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(28.dp))
         }
     }
 }

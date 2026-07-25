@@ -5,18 +5,21 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Icon
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.moriafly.salt.ui.Icon
-import com.moriafly.salt.ui.noRippleClickable
+import com.streamsound.ui.theme.StreamSoundColors
 
+/**
+ * 播放/暂停切换按钮：暂停态为深色玻璃圆角方块，播放态渐变为天蓝胶囊。
+ */
 @Composable
 fun AnimatedPlayButton(
     isPlaying: Boolean,
@@ -29,38 +32,43 @@ fun AnimatedPlayButton(
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessLow
-        )
-    )
-
-    val scale by animateFloatAsState(
-        targetValue = 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        )
+        ),
+        label = "playBtnProgress"
     )
 
     val cornerRadius = lerp(22f, 50f, progress)
-    val bgColor = lerp(Color(0xFF333333), Color(0xFF1DB954), progress)
+    val bgColor = lerp(StreamSoundColors.playButtonPaused, StreamSoundColors.accent, progress)
+    val shape = RoundedCornerShape(cornerRadius.dp)
 
     Box(
         modifier = modifier
             .size(size)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .clip(RoundedCornerShape(cornerRadius.dp))
-            .background(bgColor)
-            .border(2.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(cornerRadius.dp))
+            .clip(shape)
+            .background(
+                Brush.linearGradient(
+                    listOf(
+                        bgColor,
+                        lerp(StreamSoundColors.playButtonPaused, StreamSoundColors.accentDeep, progress)
+                    )
+                )
+            )
+            .border(
+                1.dp,
+                lerp(
+                    StreamSoundColors.glassBorderLight,
+                    StreamSoundColors.accentDeep.copy(alpha = 0.6f),
+                    progress
+                ),
+                shape
+            )
             .noRippleClickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Box {
             Icon(
-                painter = rememberVectorPainter(AppIcons.Play),
-                contentDescription = "Play",
-                tint = Color.White,
+                imageVector = AppIcons.Play,
+                contentDescription = "播放",
+                tint = StreamSoundColors.textPrimary,
                 modifier = Modifier
                     .size(size / 2)
                     .graphicsLayer {
@@ -70,9 +78,9 @@ fun AnimatedPlayButton(
                     }
             )
             Icon(
-                painter = rememberVectorPainter(AppIcons.Pause),
-                contentDescription = "Pause",
-                tint = Color.White,
+                imageVector = AppIcons.Pause,
+                contentDescription = "暂停",
+                tint = Color(0xFF06202F),
                 modifier = Modifier
                     .size(size / 2)
                     .graphicsLayer {

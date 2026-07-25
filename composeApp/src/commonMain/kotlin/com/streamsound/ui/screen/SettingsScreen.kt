@@ -1,21 +1,30 @@
 package com.streamsound.ui.screen
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
-import com.moriafly.salt.ui.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.streamsound.model.LyricsSize
-import com.streamsound.model.Theme
 import com.streamsound.model.UserRole
 import com.streamsound.navigation.LocalNavBackStack
 import com.streamsound.navigation.ScreenRoute
 import com.streamsound.store.AuthStateFlow
 import com.streamsound.store.SettingsStateFlow
+import com.streamsound.ui.component.*
+import com.streamsound.ui.theme.StreamSoundColors
 
-@OptIn(UnstableSaltUiApi::class)
+/**
+ * 设置 Tab
+ */
 @Composable
 fun SettingsScreen() {
     val navBackStack = LocalNavBackStack.current
-    val theme by SettingsStateFlow.theme.collectAsState()
     val serverUrl by SettingsStateFlow.serverUrl.collectAsState()
     val lyricsSize by SettingsStateFlow.lyricsSize.collectAsState()
     val audioCacheEnabled by SettingsStateFlow.audioCacheEnabled.collectAsState()
@@ -25,125 +34,183 @@ fun SettingsScreen() {
     var editingUrl by remember { mutableStateOf(false) }
     var urlInput by remember { mutableStateOf(serverUrl) }
 
-    BasicScreenColumn(title = "设置") {
-        ItemOuterLargeTitle(text = "设置", sub = "应用配置")
+    GlassScreen {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ) {
+            Spacer(Modifier.height(12.dp))
+            LargeTitle(title = "设置", subtitle = "应用配置")
 
-        // 外观
-        RoundedColumn {
-            ItemSwitcher(
-                state = theme == Theme.DARK,
-                onChange = { isDark ->
-                    SettingsStateFlow.setTheme(if (isDark) Theme.DARK else Theme.LIGHT)
-                },
-                text = "深色模式"
-            )
-        }
-
-        // 歌词
-        ItemOuterTitle(text = "歌词")
-        RoundedColumn {
-            Item(
-                onClick = {
-                    val next = when (lyricsSize) {
-                        LyricsSize.SM -> LyricsSize.MD
-                        LyricsSize.MD -> LyricsSize.LG
-                        LyricsSize.LG -> LyricsSize.SM
+            // ---- 账号 ----
+            user?.let { u ->
+                SectionTitle(text = "账号")
+                GlassCard(modifier = Modifier.padding(horizontal = 16.dp)) {
+                    GlassListItem(
+                        title = u.username,
+                        subtitle = if (u.role == UserRole.ADMIN) "管理员" else "普通用户",
+                        leading = {
+                            GlassIconCircle(
+                                icon = AppIcons.Person,
+                                size = 44.dp
+                            )
+                        },
+                        trailing = {
+                            if (u.role == UserRole.ADMIN) {
+                                GlassBadge(text = "ADMIN")
+                            }
+                        }
+                    )
+                    if (u.role == UserRole.ADMIN) {
+                        GlassDivider()
+                        GlassListItem(
+                            title = "管理面板",
+                            subtitle = "扫描音乐库 · 用户审批",
+                            leadingIcon = AppIcons.Settings,
+                            showChevron = true,
+                            onClick = { navBackStack.add(ScreenRoute.Admin) }
+                        )
                     }
-                    SettingsStateFlow.setLyricsSize(next)
-                },
-                text = "歌词字号",
-                sub = when (lyricsSize) {
-                    LyricsSize.SM -> "小"
-                    LyricsSize.MD -> "中"
-                    LyricsSize.LG -> "大"
-                }
-            )
-        }
-
-        // 缓存
-        ItemOuterTitle(text = "缓存")
-        RoundedColumn {
-            ItemSwitcher(
-                state = audioCacheEnabled,
-                onChange = { SettingsStateFlow.setAudioCacheEnabled(it) },
-                text = "音频缓存"
-            )
-            if (audioCacheEnabled) {
-                Item(
-                    onClick = {
-                        val next = when {
-                            audioCacheMaxMb < 256 -> 256
-                            audioCacheMaxMb < 512 -> 512
-                            audioCacheMaxMb < 1024 -> 1024
-                            else -> 128
+                    GlassDivider()
+                    GlassListItem(
+                        title = "退出登录",
+                        leading = {
+                            GlassIconCircle(
+                                icon = AppIcons.Logout,
+                                tint = StreamSoundColors.error,
+                                background = StreamSoundColors.errorSurface
+                            )
+                        },
+                        onClick = {
+                            AuthStateFlow.logout()
+                            navBackStack.clear()
+                            navBackStack.add(ScreenRoute.Login)
                         }
-                        SettingsStateFlow.setAudioCacheMaxMb(next)
-                    },
-                    text = "缓存上限",
-                    sub = "${audioCacheMaxMb} MB"
-                )
-            }
-        }
-
-        // 服务器
-        ItemOuterTitle(text = "服务器")
-        RoundedColumn {
-            if (editingUrl) {
-                ItemEdit(
-                    text = urlInput,
-                    onChange = { urlInput = it },
-                    hint = "http://192.168.1.100:3000"
-                )
-                ItemButton(
-                    onClick = {
-                        if (urlInput.isNotBlank()) {
-                            SettingsStateFlow.setServerUrl(urlInput.trim())
-                            editingUrl = false
-                        }
-                    },
-                    text = "保存"
-                )
-                Item(
-                    onClick = { editingUrl = false; urlInput = serverUrl },
-                    text = "取消"
-                )
-            } else {
-                Item(
-                    onClick = { editingUrl = true; urlInput = serverUrl },
-                    text = "服务器地址",
-                    sub = serverUrl.ifEmpty { "未配置" }
-                )
-            }
-        }
-
-        // 账号
-        user?.let { u ->
-            ItemOuterTitle(text = "账号")
-            RoundedColumn {
-                Item(text = "用户名", sub = u.username, onClick = {})
-                Item(text = "角色", sub = if (u.role == UserRole.ADMIN) "管理员" else "普通用户", onClick = {})
-            }
-
-            if (u.role == UserRole.ADMIN) {
-                RoundedColumn {
-                    ItemButton(
-                        onClick = { navBackStack.add(ScreenRoute.Admin) },
-                        text = "管理面板"
                     )
                 }
             }
 
-            RoundedColumn {
-                ItemButton(
-                    onClick = {
-                        AuthStateFlow.logout()
-                        navBackStack.clear()
-                        navBackStack.add(ScreenRoute.Login)
+            // ---- 播放 ----
+            SectionTitle(text = "播放")
+            GlassCard(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "歌词字号",
+                        color = StreamSoundColors.textPrimary,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    GlassSegmented(
+                        options = listOf(
+                            LyricsSize.SM to "小",
+                            LyricsSize.MD to "中",
+                            LyricsSize.LG to "大"
+                        ),
+                        selected = lyricsSize,
+                        onSelect = { SettingsStateFlow.setLyricsSize(it) }
+                    )
+                }
+                GlassDivider()
+                GlassListItem(
+                    title = "音频缓存",
+                    subtitle = if (audioCacheEnabled) "已开启 · 上限 $audioCacheMaxMb MB" else "已关闭",
+                    leadingIcon = AppIcons.MusicNote,
+                    trailing = {
+                        GlassSwitch(
+                            checked = audioCacheEnabled,
+                            onCheckedChange = { SettingsStateFlow.setAudioCacheEnabled(it) }
+                        )
                     },
-                    text = "退出登录",
-                    primary = false
+                    onClick = {
+                        SettingsStateFlow.setAudioCacheEnabled(!audioCacheEnabled)
+                    }
+                )
+                if (audioCacheEnabled) {
+                    GlassDivider()
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "缓存上限",
+                            color = StreamSoundColors.textPrimary,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        GlassSegmented(
+                            options = listOf(
+                                128 to "128M",
+                                256 to "256M",
+                                512 to "512M",
+                                1024 to "1G"
+                            ),
+                            selected = audioCacheMaxMb,
+                            onSelect = { SettingsStateFlow.setAudioCacheMaxMb(it) }
+                        )
+                    }
+                }
+            }
+
+            // ---- 服务器 ----
+            SectionTitle(text = "服务器")
+            GlassCard(modifier = Modifier.padding(horizontal = 16.dp)) {
+                if (editingUrl) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        GlassTextField(
+                            value = urlInput,
+                            onValueChange = { urlInput = it },
+                            hint = "http://192.168.1.100:3000",
+                            leadingIcon = AppIcons.Home
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Row(modifier = Modifier.align(Alignment.End)) {
+                            GlassButton(
+                                text = "取消",
+                                style = GlassButtonStyle.Glass,
+                                compact = true,
+                                onClick = {
+                                    editingUrl = false
+                                    urlInput = serverUrl
+                                }
+                            )
+                            Spacer(Modifier.width(10.dp))
+                            GlassButton(
+                                text = "保存",
+                                compact = true,
+                                onClick = {
+                                    if (urlInput.isNotBlank()) {
+                                        SettingsStateFlow.setServerUrl(urlInput.trim())
+                                        editingUrl = false
+                                    }
+                                }
+                            )
+                        }
+                    }
+                } else {
+                    GlassListItem(
+                        title = "服务器地址",
+                        subtitle = serverUrl.ifEmpty { "未配置" },
+                        leadingIcon = AppIcons.Home,
+                        showChevron = true,
+                        onClick = {
+                            editingUrl = true
+                            urlInput = serverUrl
+                        }
+                    )
+                }
+            }
+
+            // ---- 关于 ----
+            SectionTitle(text = "关于")
+            GlassCard(modifier = Modifier.padding(horizontal = 16.dp)) {
+                GlassListItem(
+                    title = "StreamSound 流声",
+                    subtitle = "版本 0.3.0-alpha.1 · 液态玻璃主题",
+                    leadingIcon = AppIcons.Album
                 )
             }
+
+            Spacer(Modifier.height(chromeBottomSpace))
         }
     }
 }

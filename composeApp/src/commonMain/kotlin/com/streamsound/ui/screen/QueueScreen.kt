@@ -1,67 +1,69 @@
 package com.streamsound.ui.screen
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.Icon
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
-import com.moriafly.salt.ui.*
-import com.streamsound.ui.component.AppIcons
-import com.streamsound.ui.component.TrackItem
+import com.streamsound.store.PlayerStateFlow
+import com.streamsound.ui.component.*
+import com.streamsound.ui.theme.StreamSoundColors
 
-@OptIn(UnstableSaltUiApi::class)
+/**
+ * 播放队列
+ */
 @Composable
 fun QueueScreen() {
-    val queue by com.streamsound.store.PlayerStateFlow.queue.collectAsState()
-    val currentIndex by com.streamsound.store.PlayerStateFlow.currentIndex.collectAsState()
+    val queue by PlayerStateFlow.queue.collectAsState()
+    val currentIndex by PlayerStateFlow.currentIndex.collectAsState()
 
-    BasicScreenBox(title = "播放队列") {
+    GlassScreen(
+        title = "播放队列",
+        subtitle = if (queue.isNotEmpty()) "${queue.size} 首" else null,
+        showBack = true
+    ) {
         if (queue.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = "队列为空", color = SaltTheme.colors.subText)
-            }
+            EmptyState(
+                icon = AppIcons.Queue,
+                title = "队列为空",
+                hint = "去音乐库挑几首歌吧"
+            )
         } else {
-            com.moriafly.salt.ui.lazy.LazyColumn(
+            LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = SaltDimens.RoundedColumnInListEdgePadding)
+                contentPadding = PaddingValues(top = 4.dp, bottom = chromeBottomSpace)
             ) {
                 items(queue.size) { index ->
                     val track = queue[index]
-                    val isCurrentTrack = index == currentIndex
-                    RoundedColumn(type = RoundedColumnType.InList) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(modifier = Modifier.weight(1f)) {
-                                TrackItem(
-                                    track = track,
-                                    isActive = isCurrentTrack,
-                                    onClick = {
-                                        com.streamsound.store.PlayerStateFlow.setQueue(queue, index)
-                                    }
-                                )
-                            }
-                            Icon(
-                                painter = rememberVectorPainter(AppIcons.Delete),
-                                contentDescription = "删除",
-                                tint = Color(0xFFFF4444),
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .padding(8.dp)
-                                    .noRippleClickable {
-                                        com.streamsound.store.PlayerStateFlow.removeFromQueue(index)
-                                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            TrackItem(
+                                track = track,
+                                isActive = index == currentIndex,
+                                onClick = {
+                                    PlayerStateFlow.setQueue(queue, index)
+                                }
                             )
                         }
+                        Icon(
+                            imageVector = AppIcons.Close,
+                            contentDescription = "从队列移除",
+                            tint = StreamSoundColors.textMuted,
+                            modifier = Modifier
+                                .padding(end = 14.dp)
+                                .size(32.dp)
+                                .noRippleClickable {
+                                    PlayerStateFlow.removeFromQueue(index)
+                                }
+                                .padding(6.dp)
+                        )
                     }
                 }
-                item { Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.safeMainCompat)) }
             }
         }
     }

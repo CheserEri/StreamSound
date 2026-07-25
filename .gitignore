@@ -38,3 +38,6 @@ local.properties
 
 # Claude
 .claude/
+
+# WorkBuddy 工作区数据（记忆、临时产物，不上传）
+.workbuddy/

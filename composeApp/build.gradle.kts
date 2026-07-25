@@ -32,9 +32,6 @@ kotlin {
         }
 
         commonMain.dependencies {
-            // SaltUI
-            implementation(project(":salt-ui:ui2"))
-
             // Compose
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)

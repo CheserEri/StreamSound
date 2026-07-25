@@ -1,22 +1,28 @@
 package com.streamsound.ui.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Icon
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.moriafly.salt.ui.Text
-import com.moriafly.salt.ui.noRippleClickable
 import com.streamsound.store.PlayerStateFlow
 import com.streamsound.ui.theme.StreamSoundColors
 
+/**
+ * 全局悬浮迷你播放器 —— 液态玻璃胶囊。
+ * 悬浮于底部 TabBar 之上，点击主体进入全屏播放器。
+ */
 @Composable
 fun MiniPlayer(
     onNavigateToPlayer: () -> Unit,
@@ -31,18 +37,25 @@ fun MiniPlayer(
 
     val currentTrack = queue.getOrNull(currentIndex) ?: return
 
-    val progressFraction = if (duration > 0) (progress / duration).coerceIn(0.0, 1.0).toFloat() else 0f
+    val progressFraction =
+        if (duration > 0) (progress / duration).coerceIn(0.0, 1.0).toFloat() else 0f
+
+    val shape = RoundedCornerShape(20.dp)
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color(0xFF1E1E1E))
+            .padding(horizontal = 12.dp)
+            .clip(shape)
+            .background(StreamSoundColors.glassSurfaceStrong)
+            .border(1.dp, StreamSoundColors.accent.copy(alpha = 0.22f), shape)
     ) {
-        // Progress bar
+        // 顶部进度细条
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(3.dp)
+                .height(2.5.dp)
+                .background(StreamSoundColors.sliderInactive.copy(alpha = 0.6f))
         ) {
             Box(
                 modifier = Modifier
@@ -56,14 +69,14 @@ fun MiniPlayer(
             modifier = Modifier
                 .fillMaxWidth()
                 .noRippleClickable(onClick = onNavigateToPlayer)
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 12.dp, vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             CoverImage(
                 trackId = currentTrack.id,
                 hasCover = currentTrack.hasCover,
-                size = 48.dp,
-                borderRadius = 24.dp
+                size = 42.dp,
+                borderRadius = 21.dp
             )
 
             Spacer(Modifier.width(12.dp))
@@ -71,16 +84,16 @@ fun MiniPlayer(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = currentTrack.title,
-                    color = Color.White,
-                    fontSize = 15.sp,
+                    color = StreamSoundColors.textPrimary,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = currentTrack.artist,
-                    color = Color(0xFF888888),
-                    fontSize = 13.sp,
+                    color = StreamSoundColors.textSecondary,
+                    fontSize = 12.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -91,18 +104,19 @@ fun MiniPlayer(
                 onClick = {
                     if (isPlaying) PlayerStateFlow.pause() else PlayerStateFlow.play()
                 },
-                size = 40.dp
+                size = 38.dp
             )
 
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(6.dp))
 
-            com.moriafly.salt.ui.Icon(
-                painter = androidx.compose.ui.graphics.vector.rememberVectorPainter(AppIcons.Queue),
-                contentDescription = "Queue",
-                tint = Color.White,
+            Icon(
+                imageVector = AppIcons.Queue,
+                contentDescription = "播放队列",
+                tint = StreamSoundColors.textSecondary,
                 modifier = Modifier
-                    .size(24.dp)
+                    .size(38.dp)
                     .noRippleClickable(onClick = onNavigateToQueue)
+                    .padding(8.dp)
             )
         }
     }

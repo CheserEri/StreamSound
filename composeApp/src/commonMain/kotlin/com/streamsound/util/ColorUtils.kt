@@ -3,9 +3,9 @@ package com.streamsound.util
 import androidx.compose.ui.graphics.Color
 
 val DEFAULT_PLAYER_GRADIENT = listOf(
-    Color(0xFF2A2A3A),
-    Color(0xFF1A1A28),
-    Color(0xFF0E0E18)
+    Color(0xFF1A3049),
+    Color(0xFF12233A),
+    Color(0xFF0A1524)
 )
 
 fun hexToRgb(hex: String): Triple<Int, Int, Int> {
@@ -83,31 +83,25 @@ data class DiscColors(
 )
 
 fun generateDiscColors(hexColor: String?): DiscColors {
-    if (hexColor == null || hexColor.length < 7) {
-        return DiscColors(
-            ring = Color(0xFF1A1A1A),
-            ringBorder = Color(0xFF333333),
-            center = Color(0xFF0A0A0A),
-            centerBorder = Color(0xFF333333)
-        )
-    }
+    val fallback = DiscColors(
+        ring = Color(0xFF14253B),
+        ringBorder = Color(0xFF2A4462),
+        center = Color(0xFF081220),
+        centerBorder = Color(0xFF2A4462)
+    )
+    if (hexColor == null || hexColor.length < 7) return fallback
     return try {
         val (r, g, b) = hexToRgb(hexColor)
         var (h, s, _) = rgbToHsl(r, g, b)
-        if (s < 0.08f) { h = 220f; s = 0.08f }
-        s = (s * 0.5f).coerceAtMost(0.2f)
+        if (s < 0.08f) { h = 212f; s = 0.08f }
+        s = (s * 0.5f).coerceAtMost(0.22f)
         DiscColors(
-            ring = hslToColor(h, s, 0.10f),
-            ringBorder = hslToColor(h, s, 0.18f),
-            center = hslToColor(h, s, 0.04f),
-            centerBorder = hslToColor(h, s, 0.15f)
+            ring = hslToColor(h, s, 0.12f),
+            ringBorder = hslToColor(h, s, 0.22f),
+            center = hslToColor(h, s, 0.05f),
+            centerBorder = hslToColor(h, s, 0.18f)
         )
     } catch (_: Exception) {
-        DiscColors(
-            ring = Color(0xFF1A1A1A),
-            ringBorder = Color(0xFF333333),
-            center = Color(0xFF0A0A0A),
-            centerBorder = Color(0xFF333333)
-        )
+        fallback
     }
 }

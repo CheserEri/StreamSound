@@ -4,62 +4,44 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.Icon
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.moriafly.salt.ui.Icon
 import com.streamsound.network.ApiClient
 import com.streamsound.service.StorageService
+import com.streamsound.ui.theme.StreamSoundColors
 
 @Composable
 fun CoverImage(
     trackId: Int,
     hasCover: Boolean,
     size: Dp = 48.dp,
-    borderRadius: Dp = 6.dp,
+    borderRadius: Dp = 12.dp,
     modifier: Modifier = Modifier
 ) {
-    if (!hasCover) {
+    var isLoading by remember(trackId) { mutableStateOf(true) }
+    var hasError by remember(trackId) { mutableStateOf(false) }
+
+    if (!hasCover || hasError) {
+        // 无封面占位：深蓝底 + 音符
         Box(
             modifier = modifier
                 .size(size)
                 .clip(RoundedCornerShape(borderRadius))
-                .background(Color(0xFF2A2A2A)),
+                .background(StreamSoundColors.coverPlaceholder),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                painter = rememberVectorPainter(AppIcons.MusicNote),
+                imageVector = AppIcons.MusicNote,
                 contentDescription = null,
-                tint = Color(0xFF555555),
-                modifier = Modifier.size(size / 2)
-            )
-        }
-        return
-    }
-
-    var isLoading by remember { mutableStateOf(true) }
-    var hasError by remember { mutableStateOf(false) }
-
-    if (hasError) {
-        Box(
-            modifier = modifier
-                .size(size)
-                .clip(RoundedCornerShape(borderRadius))
-                .background(Color(0xFF2A2A2A)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                painter = rememberVectorPainter(AppIcons.MusicNote),
-                contentDescription = null,
-                tint = Color(0xFF555555),
+                tint = StreamSoundColors.coverPlaceholderIcon,
                 modifier = Modifier.size(size / 2)
             )
         }
@@ -89,7 +71,7 @@ fun CoverImage(
             CircularProgressIndicator(
                 modifier = Modifier.size(size / 3),
                 strokeWidth = 2.dp,
-                color = Color.White
+                color = StreamSoundColors.accent
             )
         }
     }

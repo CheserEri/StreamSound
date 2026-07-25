@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -12,8 +13,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.moriafly.salt.ui.Text
-import com.moriafly.salt.ui.noRippleClickable
 import com.streamsound.model.LyricsSize
 import com.streamsound.store.PlayerStateFlow
 import com.streamsound.ui.theme.StreamSoundColors
@@ -52,19 +51,19 @@ fun LyricsView(
                 Text(
                     text = "♪",
                     fontSize = 48.sp,
-                    color = StreamSoundColors.lyricsEmptyIcon
+                    color = StreamSoundColors.accent.copy(alpha = 0.35f)
                 )
                 Spacer(Modifier.height(16.dp))
                 Text(
                     text = "暂无歌词",
                     fontSize = 18.sp,
-                    color = StreamSoundColors.lyricsEmptyText
+                    color = StreamSoundColors.textSecondary
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
                     text = "请确保歌曲目录中有同名 .lrc 文件",
                     fontSize = 13.sp,
-                    color = StreamSoundColors.lyricsEmptyHint,
+                    color = StreamSoundColors.textMuted,
                     textAlign = TextAlign.Center
                 )
             }
