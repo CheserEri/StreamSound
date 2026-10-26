@@ -1,0 +1,6 @@
+{
+    "name": "streamsound-bridge",
+    "private": true,
+    "type": "commonjs",
+    "description": "StreamSound 桌面端桥接进程（仅使用 Node 内置模块）"
+}

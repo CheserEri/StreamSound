@@ -1,94 +1,112 @@
-# StreamSound
+# StreamSound（流声）
 
-一个自托管的音乐串流服务，支持从本地文件夹扫描音乐库并通过网络串流播放。
+自托管音乐串流系统：服务端扫描并索引本地音乐，桌面客户端通过 HTTP 串流播放。桌面端完整内置了莱茵生命终端风格的 Qt/RHI 界面，不依赖任何外部 UI 仓库或在线音乐平台。
 
-## 功能特性
+## 功能
 
-- **音乐库管理** - 自动扫描指定文件夹，提取元数据（标题、艺术家、专辑、时长等）
-- **串流播放** - HTTP 串流，支持进度拖拽、上/下一首
-- **播放模式** - 顺序播放、随机播放、单曲循环
-- **收藏与播放历史** - 记录喜好和播放记录
-- **歌词显示** - 支持 LRC 格式歌词同步显示
-- **文件夹浏览** - 按目录结构浏览音乐文件
-- **搜索** - 全文搜索歌曲、艺术家、专辑
-- **迷你播放器** - 类似网易云音乐的底部播放控制栏
-- **系统级媒体控制** - 通知栏、锁屏、蓝牙耳机控制
-- **音频缓存** - LRU 淘汰策略的本地音频缓存
+- 本地音乐扫描与元数据解析（标题、艺术家、专辑、时长、封面、内嵌歌词）
+- 全文搜索（SQLite FTS5）、文件夹浏览、收藏、播放历史
+- HTTP 音频串流，支持 `Range` 断点续播、拖动进度
+- 封面提取与主色计算、LRC 歌词同步
+- 账号密码登录（JWT：Access 1 小时 / Refresh 30 天）
+- 桌面端四栏目：搜索曲目、喜欢的歌曲、文件夹、播放历史
 
-## 技术栈
+## 架构
 
-### 客户端 (composeApp/)
+```text
+┌──────────────────────────────────────────────┐
+│ 桌面端 desktop/（Qt 6.12 + C++）              │
+│  Native HUD + RHI 3D 场景 + QML 登录层        │
+│        │  stdin/stdout 逐行 JSON              │
+│  MusicBridge/（Node 内置模块，无第三方依赖）   │
+│        │  HTTP + Bearer + 本机媒体代理         │
+└────────┼─────────────────────────────────────┘
+         │
+┌────────▼─────────────────────────────────────┐
+│ 服务端 server/（Node + Fastify + SQLite）     │
+│  扫描 / 检索 / 收藏 / 历史 / 音频流 / 封面     │
+└──────────────────────────────────────────────┘
+```
 
-- Kotlin Multiplatform + Jetpack Compose Multiplatform
-- [Salt UI](https://github.com/Moriafly/SaltUI) 组件库
-- Media3 ExoPlayer（音频播放 + MediaSession）
-- Navigation 3（导航）
-- Ktor Client（网络请求）
-- Coil（图片加载）
-- multiplatform-settings（本地存储）
+音频与封面不直接暴露令牌：桥接进程在 `127.0.0.1` 随机端口启动本地代理，路径内含随机 secret；代理注入 Bearer 并透传 `Range`，播放器只访问回环地址。
 
-### 服务端 (server/)
+## 目录结构
 
-- Fastify（HTTP 框架）
-- better-sqlite3（数据库）
-- music-metadata（音频元数据提取）
+```text
+StreamSound/
+├── server/                 # Node.js + Fastify + better-sqlite3 服务端
+│   ├── src/
+│   │   ├── routes/         # auth / library / search / stream / covers ...
+│   │   ├── services/       # 扫描、元数据、歌词、封面配色
+│   │   └── db/             # Schema、迁移、SQLite 客户端
+│   └── scripts/
+├── desktop/                # Qt 桌面客户端（UI 完全封装在本仓库）
+│   ├── Qt/src/             # C++：HUD、RHI 场景、业务模型、播放器
+│   ├── Qt/qml/             # QML：登录输入层
+│   ├── MusicBridge/        # Node 桥接：streamsound.cjs + 本地媒体代理
+│   ├── Assets/             # 字体、模型、着色资源
+│   ├── Resources/          # 场景槽位与启动字标
+│   └── scripts/            # 资源导出、打包、安装器
+├── docs/
+│   ├── technical/          # 架构、API、部署、错误处理
+│   └── plan/               # 路线图、桌面端方案与任务清单
+└── LICENSE
+```
 
 ## 快速开始
 
-### 服务端
+### 1. 服务端
 
-```bash
+要求 Node.js 20+。
+
+```powershell
 cd server
+Copy-Item .env.example .env
+# 编辑 .env：至少设置 MUSIC_ROOT、DB_PATH、JWT_SECRET
 npm install
-# 配置 .env（参考 .env.example）
 npm run dev
 ```
 
-### 客户端
+桌面端默认连接 `http://127.0.0.1:8080`，建议把 `server/.env` 的 `PORT` 设为 `8080`。完整环境变量见 [部署文档](docs/technical/deployment.md)。
 
-用 Android Studio 打开项目根目录，运行 `composeApp` 模块。
+### 2. 桌面端（Windows）
 
-```bash
-# 或命令行构建
-./gradlew :composeApp:installDebug
+要求 Qt 6.12 `msvc2022_64`、MSVC 2022/2026 工具集、CMake 3.24+、Python 3、Node.js（开发期桥接回退系统 `node`）。
+
+```powershell
+cmake -S desktop -B desktop/build -G "Visual Studio 18 2026" -A x64 `
+  -DCMAKE_PREFIX_PATH="<Qt 6.12 msvc2022_64 路径>" -DRHINE_ENABLE_FIDELITYFX=OFF
+cmake --build desktop/build --config Release
 ```
 
-## 项目结构
+构建后需部署 Qt 运行库与运行资源（否则会报缺少 `Qt6Widgets.dll`）：
 
-```
-StreamSound/
-├── composeApp/          # Compose Multiplatform 客户端（Kotlin）
-│   ├── src/commonMain/  # 跨平台代码
-│   │   ├── model/       # 数据模型
-│   │   ├── navigation/  # 路由定义
-│   │   ├── network/     # API 客户端
-│   │   ├── playback/    # 播放器接口
-│   │   ├── service/     # 本地存储
-│   │   ├── store/       # 状态管理 (StateFlow)
-│   │   ├── ui/component/# 可复用组件
-│   │   ├── ui/screen/   # 页面
-│   │   └── util/        # 工具函数
-│   └── src/androidMain/ # Android 平台代码
-│       └── playback/    # Media3 播放服务
-├── server/              # Node.js 服务端
-└── gradle/              # Gradle 版本目录
+```powershell
+cd desktop
+python scripts/export-assets.py
+python scripts/bake-archive-lighting.py
+<Qt>\bin\windeployqt.exe --release --qmldir Qt\qml build\Release\RhineMusicDatabase.exe
 ```
 
-## 配置
+将 `desktop/output/resources` 复制为 `desktop/build/Release/resources` 后即可直接运行：
 
-服务端通过 `.env` 文件配置：
+```powershell
+desktop\build\Release\RhineMusicDatabase.exe
+```
 
-| 变量 | 说明 | 默认值 |
-|------|------|--------|
-| `PORT` | 监听端口 | `3000` |
-| `MUSIC_DIR` | 音乐文件目录 | `./music` |
-| `JWT_SECRET` | JWT 密钥 | - |
-| `SCAN_ON_START` | 启动时扫描 | `true` |
+服务器地址可通过偏好项 `streamsound-server` 或环境变量 `STREAMSOUND_SERVER` 覆盖。完整打包由 `node desktop/scripts/build.cjs` 负责。
 
-## 版本
+## 文档
 
-当前版本：`0.3.0-alpha.1`
+- [系统架构](docs/technical/architecture.md)
+- [HTTP API](docs/technical/api.md)
+- [部署与发布](docs/technical/deployment.md)
+- [错误处理](docs/technical/error-handling.md)
+- [路线图](docs/plan/roadmap.md)
+- [桌面端方案](docs/plan/desktop-client.md)
+- [任务清单](docs/plan/desktop-tasks.md)
 
-## 许可证
+## 许可
 
-MIT
+- 服务端与仓库根目录：[LICENSE](LICENSE)（MPL-2.0）
+- 桌面端界面基于 Rhine Music Database（MIT），许可与第三方声明见 [desktop/LICENSE](desktop/LICENSE) 与 [desktop/NOTICE](desktop/NOTICE)

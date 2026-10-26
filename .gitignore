@@ -1,43 +1,40 @@
-# Environment variables
+# 环境变量
 server/.env
 
-# Dependencies
+# 依赖
 node_modules/
 
-# Build output
+# 服务端构建产物
 server/dist/
 
-# Database
+# SQLite 数据库
 *.db
 *.db-journal
 *.db-wal
 *.db-shm
 
-# Cover cache
+# 封面缓存
 server/data/covers/
 
-# OS files
+# 桌面端构建与运行产物
+desktop/build/
+desktop/output/
+.toolchain/
+
+# 日志与缓存
+*.log
+coverage/
+.eslintcache
+
+# 操作系统
 .DS_Store
 Thumbs.db
 
-# IDE
+# 编辑器
 .vscode/
 .idea/
-
-# Test coverage
-coverage/
-
-# Logs
-*.log
-
-# Gradle (KMP/Compose)
-.gradle/
-build/
-local.properties
 *.iml
 
-# Claude
+# 本地 AI / 工作区数据
 .claude/
-
-# WorkBuddy 工作区数据（记忆、临时产物，不上传）
 .workbuddy/
