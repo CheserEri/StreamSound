@@ -8,7 +8,7 @@ const { createUpdateFeed } = require('../../scripts/create-update-feed.cjs');
 
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'rhine-publish-check-'));
 const options = {
-    repository: 'MikeQu223/Rhine-Music-Database',
+    repository: 'CheserEri/StreamSound',
     tag: 'v1.2.3',
     sha: 'a'.repeat(40),
     directory,
