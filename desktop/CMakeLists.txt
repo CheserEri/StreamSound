@@ -511,6 +511,26 @@ endforeach()
 add_custom_target(rhine_qpa_plugins ALL ${RHINE_QPA_COMMANDS}
     COMMENT "部署 offscreen/minimal 平台插件，供回归测试离屏运行"
     VERBATIM)
+# Windows/Linux 构建不经过 macOS 打包脚本，桥接脚本必须随构建同步到输出目录；
+# 否则程序会继续运行上次部署的旧脚本（例如仍指向 127.0.0.1 并携带登录令牌），表现为音频代理 502。
+if(NOT APPLE)
+    file(
+        GLOB
+        RHINE_BRIDGE_INPUTS
+        CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/MusicBridge/*.cjs"
+        "${CMAKE_CURRENT_SOURCE_DIR}/MusicBridge/*.json"
+        "${CMAKE_CURRENT_SOURCE_DIR}/MusicBridge/*LICENSE")
+    add_custom_target(
+        rhine_bridge ALL
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+                "$<TARGET_FILE_DIR:RhineMusicDatabase>/resources/MusicBridge"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${RHINE_BRIDGE_INPUTS}
+                "$<TARGET_FILE_DIR:RhineMusicDatabase>/resources/MusicBridge"
+        DEPENDS ${RHINE_BRIDGE_INPUTS}
+        COMMENT "同步 MusicBridge 脚本到输出目录"
+        VERBATIM)
+endif()
 add_test(NAME qt_platform_regression COMMAND RhinePlatformRegression
                                              "${CMAKE_CURRENT_BINARY_DIR}/platform-regression")
 set_tests_properties(qt_platform_regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

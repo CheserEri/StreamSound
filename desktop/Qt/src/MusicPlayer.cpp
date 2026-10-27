@@ -358,7 +358,7 @@ void MusicPlayer::prepare(QJsonObject track, quint64 generation, bool reload) {
             m_resumePosition.reset();
             // StreamSound 以服务端播放历史记录收听，预览不写入。
             if (!previewRequested && m_api->provider == "streamsound") {
-                m_api->call("report", {track}, [](MusicReply) {}, valid(generation));
+                m_api->call("report", {track["id"].toString()}, [](MusicReply) {}, valid(generation));
             }
             m_endSerial = m_host->mediaState().value("ended").toLongLong();
             auto entry = track;

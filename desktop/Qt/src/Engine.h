@@ -130,7 +130,6 @@ class Engine : public QObject {
     void hudUpdated();
     void stateChanged();
     void hitsChanged();
-    void clearCredentials();
     void performanceRequested();
     void localImportRequested(bool folder);
 

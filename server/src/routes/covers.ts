@@ -62,15 +62,13 @@ export default async function coversRoutes(fastify: FastifyInstance) {
       });
     }
 
-    // 设置响应头
+    // 设置响应头后交给 Fastify 发送流：hijack 会把尚未写出的响应头一起丢掉，
+    // 播放器只能拿到没有 MIME 类型的字节，封面会加载失败。
     const ext = extname(track.cover_path).toLowerCase();
     const mimeMap: Record<string, string> = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp' };
-    reply.header('Content-Type', mimeMap[ext] || 'image/jpeg');
-    reply.header('Cache-Control', 'public, max-age=86400');
-
-    // 流式传输图片
-    const stream = createReadStream(track.cover_path);
-    stream.pipe(reply.raw);
-    return reply.hijack();
+    return reply
+      .header('Content-Type', mimeMap[ext] || 'image/jpeg')
+      .header('Cache-Control', 'public, max-age=86400')
+      .send(createReadStream(track.cover_path));
   });
 }

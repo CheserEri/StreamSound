@@ -66,28 +66,23 @@ export default async function streamRoutes(fastify: FastifyInstance) {
 
       const chunkSize = end - start + 1;
 
-      // 设置响应头
-      reply.code(206);
-      reply.header('Content-Range', `bytes ${start}-${end}/${fileSize}`);
-      reply.header('Content-Length', chunkSize);
-      reply.header('Content-Type', mimeType);
-      reply.header('Accept-Ranges', 'bytes');
-
-      // 流式传输指定范围的文件内容
-      const stream = createReadStream(track.path, { start, end });
-      stream.pipe(reply.raw);
-      return reply.hijack();
+      // 交给 Fastify 发送流：hijack 后 reply.header 不会随响应写出，浏览器与播放器
+      // 拿到的将是没有 Content-Type/Range 的裸数据。
+      return reply
+        .code(206)
+        .header('Content-Range', `bytes ${start}-${end}/${fileSize}`)
+        .header('Content-Length', chunkSize)
+        .header('Content-Type', mimeType)
+        .header('Accept-Ranges', 'bytes')
+        .send(createReadStream(track.path, { start, end }));
     }
 
     // 没有 Range 头：传输整个文件
-    reply.code(206);
-    reply.header('Content-Length', fileSize);
-    reply.header('Content-Type', mimeType);
-    reply.header('Accept-Ranges', 'bytes');
-    reply.header('Content-Range', `bytes 0-${fileSize - 1}/${fileSize}`);
-
-    const stream = createReadStream(track.path);
-    stream.pipe(reply.raw);
-    return reply.hijack();
+    return reply
+      .code(200)
+      .header('Content-Length', fileSize)
+      .header('Content-Type', mimeType)
+      .header('Accept-Ranges', 'bytes')
+      .send(createReadStream(track.path));
   });
 }

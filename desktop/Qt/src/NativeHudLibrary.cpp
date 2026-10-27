@@ -94,9 +94,6 @@ void NativeHud::libraryPanel(double x, double y, double width) {
     }
     if (values.isEmpty()) {
         limited(music.sourceMessage(lane), x + 53, y + 501, 22, width - 106);
-        if (!music.isLocal() && lane > 0 && music.uid.isEmpty() && !music.restoringAccount) {
-            button("登录" + music.providerName() + " →", x + 53, y + 561, 300, 40, "music:login", 16);
-        }
     }
     limited(music.status, x + 53, y + 785, 11, std::max(100.0, width - 650));
     if (values.size() > 5) {
