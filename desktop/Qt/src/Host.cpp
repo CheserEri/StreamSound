@@ -292,7 +292,6 @@ void Host::send(QString key) {
 #endif
         env.insert("TMPDIR", temporary->path());
         env.insert("LANG", "en_US.UTF-8");
-        child.setProcessEnvironment(env);
         // 子进程的工作目录改到应用自己的系统临时目录
         child.setWorkingDirectory(temporary->path());
         child.setStandardErrorFile(BridgeProcess::nullDevice());
@@ -312,6 +311,8 @@ void Host::send(QString key) {
             }
         }
         env.insert("STREAMSOUND_SERVER", serverAddress());
+        // 环境变量必须在全部 insert 完成后一次性下发，否则后续写入不会进入子进程。
+        child.setProcessEnvironment(env);
         pending.insert(work.id, key);
         child.start(nodeProgram, {root + "/MusicBridge/worker.cjs"});
 #endif
