@@ -124,8 +124,6 @@ function prepareResources() {
     fs.copyFileSync(binary, path.join(bridge, nodeName));
     fs.copyFileSync(license, path.join(bridge, 'NODE-LICENSE'));
     fs.chmodSync(path.join(bridge, nodeName), 0o755);
-    // 桥接在部署前打成单文件
-    run(process.execPath, ['scripts/bundle-bridge.cjs']);
     // 同步清理旧暂存文件，开发运行与发布包使用相同的纯原生资源。
     for (const name of [
         'room-pmrem.bin',
