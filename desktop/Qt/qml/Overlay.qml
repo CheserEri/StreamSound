@@ -10,8 +10,8 @@ import Rhine.Native 1.0
 // 与原 Main.qml 的差异只有两类，且都不改变行为：
 //   1. 原来读 root.stageScale / root.stageWidth / root.height / root.visibility 的地方，
 //      改成自身属性或宿主注入（见下面的 stageScale/stageWidth/hostWindow/frameless）。
-//   2. 原来被 Main.qml 用 id 直接引用的 inputLayer / accountField / captchaField，
-//      现在在组件内部，宿主改为调用 focusInputLayer() / clearCredentials()。
+//   2. 原来被 Main.qml 用 id 直接引用的 inputLayer，现在在组件内部，
+//      宿主改为调用 focusInputLayer()。
 Item {
     id: overlay
     objectName: "overlayRoot"
@@ -42,17 +42,7 @@ Item {
             inputLayer.forceActiveFocus();
         }
     }
-    function clearCredentials() {
-        accountField.text = "";
-        captchaField.text = "";
-    }
 
-    Connections {
-        target: rhine
-        function onClearCredentials() {
-            overlay.clearCredentials();
-        }
-    }
     Loader {
         active: overlay.controlledHost
         sourceComponent: LocalMusicDialogs {

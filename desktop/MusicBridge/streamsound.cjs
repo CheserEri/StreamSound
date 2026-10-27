@@ -20,8 +20,13 @@ const PAGE = 100;
 let port = 0;
 let proxyReady = null;
 
+/** 本地代理根地址：端口与密钥每次启动都会变，不能跨进程复用。 */
+function proxyBase() {
+    return `http://127.0.0.1:${port}/${SECRET}`;
+}
+
 function proxyUrl(kind, id) {
-    return `http://127.0.0.1:${port}/${SECRET}/${kind}/${encodeURIComponent(id)}`;
+    return `${proxyBase()}/${kind}/${encodeURIComponent(id)}`;
 }
 
 /** 服务端统一返回 {data, pagination} 或 {error:{message}}；无鉴权，不附带任何凭据。 */
@@ -173,6 +178,10 @@ async function dispatch(message) {
                 return { code: 503, message: '音乐服务不可达' };
             }
             return { code: 200, value: BASE };
+        }
+        if (route === '/native/streamsound/proxy') {
+            // 会话里的封面/音频地址会绑定旧端口，客户端需要按当前代理重建。
+            return { code: 200, value: proxyBase() };
         }
         if (route === '/native/streamsound/search') {
             const query = String(args[0] || '').trim();

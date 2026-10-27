@@ -113,6 +113,7 @@ class Host : public QObject {
     std::unique_ptr<QTemporaryDir> temporary;
     QByteArray buffer;
     QString mediaTitle, mediaArtist, mediaAlbum;
+    QString proxyBase;
     int metadataRevision = 0;
     mutable qint64 lastMediaUpdate = 0;
     QNetworkAccessManager network;

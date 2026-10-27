@@ -420,6 +420,7 @@ void Host::setProvider(QString value) {
     cache.clear();
     images.clear();
     coverFlights.clear();
+    proxyBase.clear();
 }
 /** 保存新的服务器地址并重启桥接子进程，让新地址立即生效。 */
 void Host::setServerAddress(QString address) {
@@ -440,6 +441,7 @@ void Host::restartBridge() {
     cache.clear();
     images.clear();
     coverFlights.clear();
+    proxyBase.clear();
     if (child.state() != BridgeProcess::NotRunning) {
         child.kill();
         child.waitForFinished(1000);
@@ -480,6 +482,34 @@ void Host::loadCover(QString input, TextReply callback) {
             return reader.read();
         }));
         return;
+    }
+    // 会话保存的封面地址带着上次运行时的代理端口与密钥，端口每次启动都会变；
+    // 按桥接当前代理地址重建，否则旧会话里的封面全部指向已失效的本地地址。
+    if (!offline && !stopped && provider == "streamsound" && input.startsWith("http://127.0.0.1:")) {
+        const auto covers = input.indexOf(QStringLiteral("/covers/"));
+        if (covers < 0) {
+            callback({});
+            return;
+        }
+        const auto suffix = input.mid(covers);
+        if (proxyBase.isEmpty()) {
+            const auto generation = epoch;
+            requestJson(
+                "/native/" + provider + "/proxy", {},
+                [this, suffix, callback, generation](QJsonObject response, QString error) {
+                    const auto base = error.isEmpty()
+                                          ? response["body"].toObject()["value"].toString()
+                                          : QString();
+                    if (base.isEmpty() || generation != epoch || stopped) {
+                        callback({});
+                        return;
+                    }
+                    proxyBase = base;
+                    loadCover(base + suffix, callback);
+                });
+            return;
+        }
+        input = proxyBase + suffix;
     }
     // 桥接内置的本地媒体代理只监听回环地址，必须保留 http 协议。
     const bool loopback = input.startsWith("http://127.0.0.1") || input.startsWith("http://localhost");
