@@ -149,7 +149,7 @@
 3. 构建：
    ```
    cmake -S desktop -B desktop/build -G "Visual Studio 18 2026" -A x64 \
-     -DCMAKE_PREFIX_PATH="<repo>\.toolchain\Qt\6.12.0\msvc2022_64"
+     -DCMAKE_PREFIX_PATH="<Qt 路径>"
    cmake --build desktop/build --config Debug
    ```
 4. 手工验收：服务器地址配置 → 五列内容 → 搜索 → 收藏/取消 → 播放/进度/音量/切歌 → 歌词滚动 → 封面显示 → 历史新增。

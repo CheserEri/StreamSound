@@ -1,5 +1,9 @@
 # 环境变量
 server/.env
+tools/deploy.env
+
+# Python 缓存
+__pycache__/
 
 # 依赖
 node_modules/

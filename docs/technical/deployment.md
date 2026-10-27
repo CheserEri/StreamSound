@@ -16,7 +16,7 @@
 | --- | --- | --- |
 | `PORT` | `8080` | 监听端口 |
 | `HOST` | `0.0.0.0` | 监听地址；仅本机使用时设为 `127.0.0.1` |
-| `MUSIC_ROOT` | `/home/<user>/Music` | 音乐库根目录 |
+| `MUSIC_ROOT` | `./music` | 音乐库根目录 |
 | `DB_PATH` | `./data/streamsound.db` | SQLite 文件路径 |
 | `SCAN_CRON` | `0 * * * *` | 定时扫描表达式 |
 | `SCAN_ON_START` | `true` | 启动时是否立即扫描 |
@@ -38,6 +38,27 @@ npm start
 ```bash
 npm run dev
 ```
+
+#### 1.3.1 从 Windows 开发机一键部署
+
+根目录 `deploy.cmd` 通过 SSH 完成日常更新，不需要登录服务器：
+
+1. 本地 `server` 执行 `npm run build`；构建失败不会触碰远端
+2. 打包 `dist`、`src`、`package.json`、`package-lock.json` 等并上传到 `/tmp`
+3. 远端备份当前 `dist` 后替换；`package-lock` 哈希变化时执行 `npm install --omit=dev`
+4. `sudo systemctl restart streamsound`，轮询 `/health`
+5. 健康检查失败自动回滚 `dist` 并重启旧版本
+
+连接参数在 `tools/deploy.env`（gitignore）。首次使用：
+
+```powershell
+Copy-Item tools\deploy.env.example tools\deploy.env
+python -m pip install paramiko
+python tools\remote.py info      # 查看主机、服务、音乐目录与健康状态
+powershell -ExecutionPolicy Bypass -File tools\deploy.ps1 -Plan   # 只预览步骤
+```
+
+`start.cmd` 会先检查 `http://<host>:<port>/health`，不在线时通过 SSH 执行 `systemctl start streamsound`，随后启动 `desktop/build/Release/RhineMusicDatabase.exe`。
 
 ### 1.4 systemd
 
@@ -65,18 +86,17 @@ sudo systemctl enable --now streamsound
 sudo journalctl -u streamsound -f
 ```
 
-#### 1.4.1 当前部署（Ubuntu <server-ip>）
+#### 1.4.1 示例部署（Ubuntu）
 
-| 项目 | 值 |
+| 项目 | 示例值 |
 | --- | --- |
 | 主机 / 用户 | `<server-ip>` / `<user>` |
 | 应用目录 | `/home/<user>/streamsound` |
 | 音乐根目录 | `/home/<user>/Music` |
 | 数据库 | `/home/<user>/streamsound/data/streamsound.db` |
-| systemd 单元 | `streamsound`（已 enable，`Restart=always`，`ExecStart=/usr/bin/node /home/<user>/streamsound/dist/index.js`） |
+| systemd 单元 | `streamsound`（`Restart=always`，`ExecStart=/usr/bin/node /home/<user>/streamsound/dist/index.js`） |
 | 日志 | `/home/<user>/streamsound/server.log` |
-| 防火墙 | `ufw allow 8080/tcp`；若存在针对 `8080/tcp` 的显式 DENY 规则需先删除 |
-| 已索引曲目 | 330 |
+| 防火墙 | `ufw allow 8080/tcp` |
 
 `.env` 关键项：`PORT=8080`、`HOST=0.0.0.0`、`MUSIC_ROOT=/home/<user>/Music`、`DB_PATH=/home/<user>/streamsound/data/streamsound.db`、`SCAN_CRON="0 4 * * *"`、`SCAN_ON_START=true`、`LOG_LEVEL=info`。
 
@@ -112,7 +132,7 @@ server {
 - 备份 SQLite 时使用在线备份，避免复制到写入中的 WAL：
 
 ```bash
-sqlite3 /var/lib/streamsound/data.db ".backup '/var/backups/streamsound-$(date +%F).db'"
+sqlite3 /home/<user>/streamsound/data/streamsound.db ".backup '/home/<user>/streamsound/data/streamsound-$(date +%F).db'"
 ```
 
 - 封面缓存位于数据目录下，可随数据库一起备份
@@ -172,7 +192,7 @@ RhineMusicDatabase/
 └── data/                # settings.ini、缓存
 ```
 
-- 服务器地址：偏好项 `streamsound-server`，默认 `http://<server-ip>:8080`
+- 服务器地址：偏好项 `streamsound-server`，默认 `http://127.0.0.1:8080`，也可由 `STREAMSOUND_SERVER` 环境变量注入
 - 无登录态或凭据文件；客户端只保存上述地址偏好
 
 ### 2.5 其他平台

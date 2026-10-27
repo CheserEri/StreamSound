@@ -47,7 +47,9 @@ Copy-Item output\resources build\Release\resources -Recurse -Force
 desktop\build\Release\RhineMusicDatabase.exe
 ```
 
-- 服务器地址：偏好项 `streamsound-server`（设置页可编辑），默认 `http://<server-ip>:8080`；也可用环境变量 `STREAMSOUND_SERVER` 覆盖
+日常直接双击仓库根目录的 `start.cmd`：它会先确认 Ubuntu 服务端在线，再启动上面的可执行文件。
+
+- 服务器地址：偏好项 `streamsound-server`（设置页可编辑），默认 `http://127.0.0.1:8080`；也可用环境变量 `STREAMSOUND_SERVER` 覆盖（根目录 `start.cmd` 会自动注入）
 - 开发期若 `MusicBridge/node.exe` 不存在，会回退到系统 `node`
 - 完整发布包：`node scripts/build.cjs`（见 [部署文档](../docs/technical/deployment.md)）
 

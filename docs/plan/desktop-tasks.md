@@ -6,7 +6,7 @@
 
 - [x] T0.1 复制子模块（可选）：仅当需要 FSR3 时，把 `.toolchain/submodules/*` 复制到 `desktop/FidelityFX-SDK`、`desktop/third_party/glslang`、`.../External/spirv-tools`、`.../External/spirv-headers`，去除 `.git`。首版跳过。
 - [x] T0.2 CMake 配置：
-  `cmake -S desktop -B desktop/build -G "Visual Studio 18 2026" -A x64 -DCMAKE_PREFIX_PATH="<repo>\.toolchain\Qt\6.12.0\msvc2022_64" -DRHINE_ENABLE_FIDELITYFX=OFF`
+  `cmake -S desktop -B desktop/build -G "Visual Studio 18 2026" -A x64 -DCMAKE_PREFIX_PATH="<Qt 路径>" -DRHINE_ENABLE_FIDELITYFX=OFF`
 - [x] T0.3 编译未修改的 Rhine 基线，记录缺失项。
   验收：`desktop/build/**/RhineMusicDatabase.exe` 生成。
 - [x] T0.4 在 `.gitignore` 追加 `.toolchain/`、`desktop/build/`、`desktop/MusicBridge/node_modules/`。
@@ -45,7 +45,7 @@
 ## T5 构建与发布
 
 - [x] T5.1 生成 Release 构建；确认 `MusicBridge/node.exe` 随包（开发期回退系统 `node`）。
-- [x] T5.2 更新 `desktop/README.md`：服务器地址配置（`Host::preference("streamsound-server")`，默认 `http://<server-ip>:8080`）、构建步骤。
+- [x] T5.2 更新 `desktop/README.md`：服务器地址配置（`Host::preference("streamsound-server")`，默认 `http://127.0.0.1:8080`）、构建步骤。
 - [x] T5.3 保留 MIT `LICENSE`/`NOTICE`，补充 StreamSound 修改说明。
 
 ## 验收门槛

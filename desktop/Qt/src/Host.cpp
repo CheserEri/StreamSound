@@ -28,8 +28,11 @@
 static QString hash(QByteArray value) {
     return QCryptographicHash::hash(value, QCryptographicHash::Sha256).toHex();
 }
-// 首启无偏好时直接连接的内网自建服务地址。
-static const QString kDefaultServerAddress = QStringLiteral("http://<server-ip>:8080");
+// 首启无偏好时优先读取环境变量 STREAMSOUND_SERVER，否则回退到本机地址。
+static QString defaultServerAddress() {
+    const auto configured = qEnvironmentVariable("STREAMSOUND_SERVER").trimmed();
+    return configured.isEmpty() ? QStringLiteral("http://127.0.0.1:8080") : configured;
+}
 // 按路由隔离的缓存与限流范围；现在只剩自建服务与本地曲库。
 static QString routeProvider(const QString &route) {
     if (route.startsWith("/native/")) {
@@ -398,10 +401,10 @@ void Host::schedule(int ms, std::function<void()> callback) {
         }
     });
 }
-/** 首启或偏好为空时回退到默认地址，保证直接连上内网自建服务。 */
+/** 首启或偏好为空时回退到环境变量或本机地址。 */
 QString Host::serverAddress() const {
     const auto saved = preference("streamsound-server");
-    return saved.isEmpty() ? kDefaultServerAddress : saved;
+    return saved.isEmpty() ? defaultServerAddress() : saved;
 }
 /**
  * 切换音乐来源：只剩自建服务与本地曲库两种。

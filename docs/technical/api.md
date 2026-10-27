@@ -25,7 +25,7 @@
 | 项目 | 说明 |
 |------|------|
 | 协议 | HTTP / HTTPS |
-| Base URL | `http://<server-ip>:<port>` （由 App 用户配置，默认 `http://<server-ip>:8080`） |
+| Base URL | `http://<server-ip>:<port>` （由 App 用户配置，默认 `http://127.0.0.1:8080`） |
 | 数据格式 | JSON（`Content-Type: application/json`） |
 | 字符编码 | UTF-8 |
 | 时间格式 | Unix 时间戳（秒），整型 |
@@ -626,7 +626,7 @@ Cache-Control: public, max-age=86400
 ```json
 {
   "data": {
-    "musicRoot": "/home/<user>/Music"
+    "musicRoot": "/path/to/Music"
   }
 }
 ```
@@ -641,7 +641,7 @@ Cache-Control: public, max-age=86400
 
 ```json
 {
-  "musicRoot": "/home/<user>/Music"
+  "musicRoot": "/path/to/Music"
 }
 ```
 

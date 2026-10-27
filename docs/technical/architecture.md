@@ -149,5 +149,5 @@ server/src/
 ## 6. UI 归属
 
 - 全部界面源码（C++ HUD、RHI 场景、QML 输入层）、着色器、字体、模型与场景数据均位于 `desktop/`
-- 运行时不加载 `Rhine-Music-Database` 或任何外部资源目录
+- 运行时不加载任何外部资源目录（旧 Rhine 仓库路径不参与构建）
 - 上游 Rhine Music Database 的 MIT 许可与第三方声明保留在 `desktop/LICENSE`、`desktop/NOTICE`

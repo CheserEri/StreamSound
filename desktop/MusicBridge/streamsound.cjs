@@ -12,8 +12,8 @@ const https = require('node:https');
 const crypto = require('node:crypto');
 const readline = require('node:readline');
 
-// 后端地址由偏好经环境变量下发；缺省指向 LAN 内的自建服务，首启即可使用。
-const BASE = (process.env.STREAMSOUND_SERVER || 'http://<server-ip>:8080').replace(/\/+$/, '');
+// 后端地址由偏好经环境变量下发；缺省指向本机服务，可在设置页修改。
+const BASE = (process.env.STREAMSOUND_SERVER || 'http://127.0.0.1:8080').replace(/\/+$/, '');
 const SECRET = crypto.randomBytes(18).toString('hex');
 const PAGE = 100;
 

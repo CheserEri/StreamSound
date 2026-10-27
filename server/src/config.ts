@@ -14,7 +14,7 @@ const booleanString = z.preprocess((value) => {
 const envSchema = z.object({
   PORT: z.coerce.number().default(8080),
   HOST: z.string().default('0.0.0.0'),
-  MUSIC_ROOT: z.string().default('/home/<user>/Music'),
+  MUSIC_ROOT: z.string().default('./music'),
   DB_PATH: z.string().default('./data/streamsound.db'),
   SCAN_CRON: z.string().default('0 * * * *'),
   SCAN_ON_START: booleanString.default(true),
