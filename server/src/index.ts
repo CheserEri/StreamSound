@@ -2,16 +2,14 @@ import Fastify from 'fastify';
 import { config } from './config.js';
 import { initDb, closeDb } from './db/client.js';
 import { runMigrations } from './db/migrate.js';
-import authPlugin from './plugins/auth.js';
 import corsPlugin from './plugins/cors.js';
-import authRoutes from './routes/auth.js';
 import libraryRoutes from './routes/library.js';
 import streamRoutes from './routes/stream.js';
 import coversRoutes from './routes/covers.js';
 import searchRoutes from './routes/search.js';
 import favoritesRoutes from './routes/favorites.js';
 import historyRoutes from './routes/history.js';
-import adminRoutes from './routes/admin.js';
+import scanRoutes from './routes/scan.js';
 import { startScan } from './services/scanner.js';
 import { startScheduler, stopScheduler } from './services/scheduler.js';
 
@@ -33,17 +31,15 @@ async function main() {
 
   // Register plugins
   await fastify.register(corsPlugin);
-  await fastify.register(authPlugin);
 
   // Register routes
-  await fastify.register(authRoutes);
   await fastify.register(libraryRoutes);
   await fastify.register(streamRoutes);
   await fastify.register(coversRoutes);
   await fastify.register(searchRoutes);
   await fastify.register(favoritesRoutes);
   await fastify.register(historyRoutes);
-  await fastify.register(adminRoutes);
+  await fastify.register(scanRoutes);
 
   // Health check
   fastify.get('/health', async () => ({ status: 'ok' }));

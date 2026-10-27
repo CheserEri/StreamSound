@@ -8,7 +8,7 @@
 - 全文搜索（SQLite FTS5）、文件夹浏览、收藏、播放历史
 - HTTP 音频串流，支持 `Range` 断点续播、拖动进度
 - 封面提取与主色计算、LRC 歌词同步
-- 账号密码登录（JWT：Access 1 小时 / Refresh 30 天）
+- 局域网免登录：桌面端只需配置一次服务器地址，服务端接口不做鉴权
 - 桌面端四栏目：搜索曲目、喜欢的歌曲、文件夹、播放历史
 
 ## 架构
@@ -16,10 +16,10 @@
 ```text
 ┌──────────────────────────────────────────────┐
 │ 桌面端 desktop/（Qt 6.12 + C++）              │
-│  Native HUD + RHI 3D 场景 + QML 登录层        │
+│  Native HUD + RHI 3D 场景 + QML 输入层        │
 │        │  stdin/stdout 逐行 JSON              │
 │  MusicBridge/（Node 内置模块，无第三方依赖）   │
-│        │  HTTP + Bearer + 本机媒体代理         │
+│        │  HTTP + 本机媒体代理                 │
 └────────┼─────────────────────────────────────┘
          │
 ┌────────▼─────────────────────────────────────┐
@@ -28,7 +28,7 @@
 └──────────────────────────────────────────────┘
 ```
 
-音频与封面不直接暴露令牌：桥接进程在 `127.0.0.1` 随机端口启动本地代理，路径内含随机 secret；代理注入 Bearer 并透传 `Range`，播放器只访问回环地址。
+服务端不做鉴权，局域网内直接访问。音频与封面经桥接进程在 `127.0.0.1` 随机端口启动的本地代理转发，路径内含随机 secret 并透传 `Range`，播放器只访问回环地址，不直接暴露服务器地址。
 
 ## 目录结构
 
@@ -36,13 +36,13 @@
 StreamSound/
 ├── server/                 # Node.js + Fastify + better-sqlite3 服务端
 │   ├── src/
-│   │   ├── routes/         # auth / library / search / stream / covers ...
+│   │   ├── routes/         # library / search / stream / covers / scan ...
 │   │   ├── services/       # 扫描、元数据、歌词、封面配色
 │   │   └── db/             # Schema、迁移、SQLite 客户端
 │   └── scripts/
 ├── desktop/                # Qt 桌面客户端（UI 完全封装在本仓库）
 │   ├── Qt/src/             # C++：HUD、RHI 场景、业务模型、播放器
-│   ├── Qt/qml/             # QML：登录输入层
+│   ├── Qt/qml/             # QML：文本输入与弹窗层
 │   ├── MusicBridge/        # Node 桥接：streamsound.cjs + 本地媒体代理
 │   ├── Assets/             # 字体、模型、着色资源
 │   ├── Resources/          # 场景槽位与启动字标
@@ -62,12 +62,12 @@ StreamSound/
 ```powershell
 cd server
 Copy-Item .env.example .env
-# 编辑 .env：至少设置 MUSIC_ROOT、DB_PATH、JWT_SECRET
+# 编辑 .env：至少设置 MUSIC_ROOT、DB_PATH
 npm install
 npm run dev
 ```
 
-桌面端默认连接 `http://127.0.0.1:8080`，建议把 `server/.env` 的 `PORT` 设为 `8080`。完整环境变量见 [部署文档](docs/technical/deployment.md)。
+桌面端默认连接 `http://<server-ip>:8080`，可通过设置页「服务器地址」或环境变量 `STREAMSOUND_SERVER` 改成自己的服务端。完整环境变量见 [部署文档](docs/technical/deployment.md)。
 
 ### 2. 桌面端（Windows）
 

@@ -452,12 +452,6 @@ int Engine::frameIntervalMs() const {
     return -1;
 }
 
-void Engine::sendLoginCode(QString phone) {
-    if (app->hud.modal == "login" && app->music.loginMethod == "phone") {
-        app->music.sendLoginCode(phone);
-        wake();
-    }
-}
 /**
  * 最小化时保留最大化或全屏标记
  */
@@ -748,11 +742,6 @@ void Engine::step(double time) {
     auto state = object["state"].toObject().toVariantMap();
     if (state != m_state) {
         m_state = state;
-        const auto loginMethod = m_state.value("loginMethod").toString();
-        if (loginMethod != m_loginMethod) {
-            m_loginMethod = loginMethod;
-            emit clearCredentials();
-        }
         emit stateChanged();
     }
     auto hits = object["hits"].toArray().toVariantList();

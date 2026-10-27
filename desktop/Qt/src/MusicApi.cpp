@@ -11,16 +11,7 @@ QString MusicApi::providerName(const QString &provider) {
     if (provider == "local") {
         return QStringLiteral("本地音乐");
     }
-    if (provider == "streamsound") {
-        return QStringLiteral("流声");
-    }
-    if (provider == "qq") {
-        return QStringLiteral("QQ 音乐");
-    }
-    if (provider == "kugou") {
-        return QStringLiteral("酷狗音乐");
-    }
-    return QStringLiteral("网易云音乐");
+    return QStringLiteral("流声");
 }
 
 QJsonObject MusicApi::safeFailure(const QJsonObject &body, bool includePrevious) {
@@ -51,9 +42,6 @@ QJsonObject MusicApi::safeFailure(const QJsonObject &body, bool includePrevious)
     if (body["verification"] == "unconfirmed") {
         result["verification"] = "unconfirmed";
     }
-    if (body["authExpired"].toBool()) {
-        result["authExpired"] = true;
-    }
     return result;
 }
 
@@ -77,9 +65,8 @@ void MusicApi::request(QString route, QJsonObject parameters, Reply callback, Va
         }
         return;
     }
-    if (provider != "netease") {
-        route = "/" + provider + route;
-    }
+    // 只保留自建服务，所有请求都落在该来源的固定前缀下。
+    route = "/" + provider + route;
     send(route, parameters, false, std::move(callback), std::move(valid), allowed);
 }
 
@@ -116,10 +103,6 @@ void MusicApi::send(QString route, QJsonObject parameters, bool adapted, Reply c
                 callback({{}, message, safeFailure(body)});
                 return;
             }
-            owner->m_host->acceptCookies(
-                QString::fromUtf8(
-                    QJsonDocument(response["cookies"].toArray()).toJson(QJsonDocument::Compact)),
-                response["_epoch"].toInt(), response["_credentialKey"].toString());
             callback({adapted ? body["value"] : QJsonValue(body), {}, {}});
         });
 }

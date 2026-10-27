@@ -55,7 +55,6 @@ void NativeApplication::initialize() {
         }
     }
     music.restoreAccount();
-    music.restoreIdentityName();
 }
 QJsonObject NativeApplication::step(double time, double width, bool reuseScene) {
     const auto frame = reuseScene ? music.frame : m_scene->sample(time);

@@ -8,7 +8,7 @@
 #include <algorithm>
 
 QString MusicPlayer::identity(const QJsonObject &track) {
-    return track["provider"].toString("netease") + ":" + track["id"].toString();
+    return track["provider"].toString("streamsound") + ":" + track["id"].toString();
 }
 
 /** 本地音质近似分级 */
@@ -42,11 +42,11 @@ QString MusicPlayer::localQuality(const QJsonObject &track) {
 
 /** 只识别本次可播放地址及其响应元数据；不读取偏好或歌曲可用音质列表。 */
 QString MusicPlayer::sourceQuality(const QString &provider, const QJsonObject &audio, bool trial) {
+    Q_UNUSED(provider);
     if (trial || audio["url"].toString().isEmpty()) {
         return {};
     }
     const auto url = QUrl(audio["url"].toString());
-    const auto file = url.fileName().toUpper();
     auto format = audio["type"].toString().toLower();
     if (format.isEmpty()) {
         format = audio["extName"].toString().toLower();
@@ -54,35 +54,21 @@ QString MusicPlayer::sourceQuality(const QString &provider, const QJsonObject &a
     if (format.isEmpty()) {
         format = QFileInfo(url.path()).suffix().toLower();
     }
-    if (provider == "qq") {
-        // 登录接口可能没有 quality；前缀是实际获准播放的媒体文件类型。
-        if (file.startsWith("F000") || file.startsWith("A000")) {
-            return "sq";
-        }
-        if (file.startsWith("M800")) {
-            return "hq";
-        }
-        if (file.startsWith("M500") || file.startsWith("C400")) {
-            return "standard";
-        }
-        return {};
-    }
     const auto bitrate = audio["br"].toDouble();
     const bool lossy = format == "mp3" || format == "m4a" || format == "aac";
     if (lossy && bitrate > 0) {
-        // 替代音源可能保留原等级；已返回的有损格式与码率优先于等级标签。
+        // 已返回的有损格式与码率优先于等级标签。
         return bitrate >= 192000 ? "hq" : "standard";
     }
-    if (provider == "netease") {
-        const auto level = audio["level"].toString();
-        const QHash<QString, QString> levels{
-            {"standard", "standard"}, {"higher", "hq"},         {"exhigh", "hq"}, {"lossless", "sq"},
-            {"hires", "hires"},       {"jyeffect", "jyeffect"}, {"sky", "sky"},   {"jymaster", "jymaster"}};
-        if (levels.contains(level)) {
-            const auto resolved = levels.value(level);
-            if (!lossy || resolved == "standard" || resolved == "hq") {
-                return resolved;
-            }
+    // 自建服务沿用统一的 level 档位映射。
+    const auto level = audio["level"].toString();
+    const QHash<QString, QString> levels{
+        {"standard", "standard"}, {"higher", "hq"},         {"exhigh", "hq"}, {"lossless", "sq"},
+        {"hires", "hires"},       {"jyeffect", "jyeffect"}, {"sky", "sky"},   {"jymaster", "jymaster"}};
+    if (levels.contains(level)) {
+        const auto resolved = levels.value(level);
+        if (!lossy || resolved == "standard" || resolved == "hq") {
+            return resolved;
         }
     }
     const bool lossless = format == "flac" || format == "ape" || format == "alac";
@@ -97,19 +83,7 @@ QString MusicPlayer::sourceQuality(const QString &provider, const QJsonObject &a
 }
 
 QVector<QPair<QString, QString>> MusicPlayer::qualityOptions(const QString &provider) {
-    if (provider == "qq") {
-        return {{"best", "自动最高可用"},
-                {"standard", "标准"},
-                {"exhigh", "HQ 高品质"},
-                {"lossless", "SQ 无损 / FLAC"},
-                {"ape", "SQ 无损 / APE"}};
-    }
-    if (provider == "kugou") {
-        return {{"standard", "标准"},
-                {"exhigh", "HQ 高品音质"},
-                {"lossless", "SQ 无损音质"},
-                {"hires", "Hi-Res 高解析音质"}};
-    }
+    Q_UNUSED(provider);
     return {
         {"standard", "标准"},           {"higher", "较高"},      {"exhigh", "极高"}, {"lossless", "SQ 无损"},
         {"hires", "Hi-Res 高解析音质"}, {"jymaster", "超清母带"}};
@@ -251,7 +225,9 @@ void MusicPlayer::play(QJsonObject track, std::optional<QJsonArray> source, std:
     m_resumePaused = resume && !resume->value("requested").toBool();
     m_restoringSession = resume.has_value();
     m_recoveryAttempts = 0;
-    previewRequested = preview && m_api->provider == "qq";
+    Q_UNUSED(preview);
+    // 自建服务不提供试听片段，始终请求完整播放。
+    previewRequested = false;
     m_host->mediaControl("stop");
     current = track;
     actualQuality.clear();
@@ -350,27 +326,18 @@ void MusicPlayer::prepare(QJsonObject track, quint64 generation, bool reload) {
         emit changed();
         return;
     }
-    // QQ 专有音质在其他平台转换为通用无损
-    const auto qqQuality = quality == "best" || quality == "ape";
-    auto effectiveQuality = qqQuality && m_api->provider != "qq" ? "lossless" : quality;
-
-    // 网易云专有音质在其他平台转换为对应档位
-    if (m_api->provider != "netease") {
-        if (quality == "jymaster" || quality == "jyeffect" || quality == "sky") {
-            effectiveQuality = "lossless";
-        } else if (quality == "higher") {
-            effectiveQuality = "standard";
-        }
-    }
-
-    // 酷狗不支持 ape，转换为通用无损
-    if (m_api->provider == "kugou" && quality == "ape") {
+    // 自建服务沿用统一的音质档位，把本端不支持的档位收敛到通用无损。
+    auto effectiveQuality = quality;
+    if (quality == "jymaster" || quality == "jyeffect" || quality == "sky" || quality == "ape" ||
+        quality == "best") {
         effectiveQuality = "lossless";
+    } else if (quality == "higher") {
+        effectiveQuality = "standard";
     }
 
     m_api->call(
         previewRequested ? "preview" : "playback", {track, effectiveQuality, alternative},
-        [this, track](MusicReply result) {
+        [this, track, generation](MusicReply result) {
             if (!result.ok()) {
                 fail(result.error);
                 return;
@@ -378,20 +345,20 @@ void MusicPlayer::prepare(QJsonObject track, quint64 generation, bool reload) {
             const auto audio = result.value.toObject();
             const auto url = audio["url"].toString();
             if (url.isEmpty()) {
-                fail(QStringLiteral("此歌曲暂无可用音源，请检查登录和歌曲权限"));
+                fail(QStringLiteral("此歌曲暂无可用音源，请检查歌曲权限"));
                 return;
             }
             m_host->mediaMetadata(track["title"].toString(), track["artist"].toString(),
                                   track["album"].toString());
-            if (!m_host->mediaLoad(url, m_api->provider == "netease" && alternative,
-                                   m_resumePosition.value_or(0), m_resumePosition && m_resumePaused)) {
+            if (!m_host->mediaLoad(url, false, m_resumePosition.value_or(0),
+                                   m_resumePosition && m_resumePaused)) {
                 fail(QStringLiteral("音频地址不可用"));
                 return;
             }
             m_resumePosition.reset();
             // StreamSound 以服务端播放历史记录收听，预览不写入。
             if (!previewRequested && m_api->provider == "streamsound") {
-                m_api->call("report", {track}, [](MusicReply) {}, {});
+                m_api->call("report", {track}, [](MusicReply) {}, valid(generation));
             }
             m_endSerial = m_host->mediaState().value("ended").toLongLong();
             auto entry = track;

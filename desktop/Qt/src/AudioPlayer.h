@@ -18,7 +18,7 @@ class AudioPlayer {
   public:
     explicit AudioPlayer(std::function<void()> changed = {});
     ~AudioPlayer();
-    bool load(QString input, bool offline, bool alternative = false, QString provider = "netease",
+    bool load(QString input, bool offline, bool alternative = false, QString provider = "streamsound",
               double position = 0, bool paused = false);
     void control(QString action, double value = 0);
     QVariantMap state() const;

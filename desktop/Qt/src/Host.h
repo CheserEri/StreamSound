@@ -29,16 +29,9 @@ class Host : public QObject {
     Q_INVOKABLE void invalidate() {
         emit invalidated();
     }
-    Q_INVOKABLE bool authenticated() const;
-    Q_INVOKABLE bool hasCredential(QString value) const;
-    Q_INVOKABLE QString saveCredential();
-    Q_INVOKABLE void logout();
     Q_INVOKABLE void setProvider(QString provider);
-    Q_INVOKABLE void setKugouEdition(QString edition);
-    Q_INVOKABLE void acceptCookies(QString json, int responseEpoch, QString credentialKey = {});
-    Q_INVOKABLE QString fromLink(QString input) const;
-    Q_INVOKABLE QString qr(QString key);
-    Q_INVOKABLE QString qrImage(QString data);
+    Q_INVOKABLE QString serverAddress() const;
+    Q_INVOKABLE void setServerAddress(QString address);
     Q_INVOKABLE void mediaMetadata(QString title, QString artist, QString album);
     Q_INVOKABLE bool mediaLoad(QString url, bool alternative = false, double position = 0,
                                bool paused = false);
@@ -126,9 +119,7 @@ class Host : public QObject {
     mutable QCache<QString, QImage> images{32 * 1024};
     qint64 lastStart = 0;
     QHash<QString, qint64> blockedUntil;
-    QHash<QString, QJsonObject> privateCredentials;
-    QString provider = "netease";
-    QString kugouEdition = "standard";
+    QString provider = "streamsound";
     QString active;
     bool stopped = false;
     bool audioDiagnosticsEnabled = false;
@@ -137,6 +128,7 @@ class Host : public QObject {
     void send(QString key);
     void finish(QString key, QJsonObject response, QString error = {});
     void respond(const Waiter &waiter, QJsonObject response, QString error);
+    void restartBridge();
     QString diskPath(QString key) const;
 };
 QByteArray platformCredential();

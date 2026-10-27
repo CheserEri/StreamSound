@@ -177,9 +177,6 @@ QJsonObject NativeHud::state() const {
             {"inputWidth", bounds.width() - 106},
             {"seek", rect(playerSeekRect)},
             {"volume", rect(playerVolumeRect)},
-            {"loginMethod", m_music->loginMethod},
-            {"loginBusy", m_music->accountLoading},
-            {"smsRetrySeconds", m_music->smsRetrySeconds()},
             {"localMusic", m_music->isLocal()},
             {"formKind", formKind},
             {"formPID", formPID},
@@ -301,15 +298,7 @@ void NativeHud::navigation(double width) {
 }
 void NativeHud::footer(double width) {
     fill(59, 971, 5, 5, {119.0 / 255, 123.0 / 255, 96.0 / 255, 1});
-    QString session = m_music->isLocal() ? "LOCAL LIBRARY" : "GUEST SESSION";
-    if (!m_music->uid.isEmpty()) {
-        session = "NETEASE SESSION";
-        if (m_music->provider == "qq") {
-            session = "QQ SESSION";
-        } else if (m_music->provider == "kugou") {
-            session = "KUGOU SESSION";
-        }
-    }
+    QString session = m_music->isLocal() ? "LOCAL LIBRARY" : "STREAMSOUND SESSION";
     text(session, 75, 967, 10, "regular", 0.9);
     const auto credit = QStringLiteral("POWERED BY RHINE LAB");
     text(credit, width - 59 - m_glyphs->width(credit, 10, "demibold"), 967, 10, "demibold");
@@ -332,11 +321,6 @@ void NativeHud::empty(double width) {
         title = music.sourceLoading() ? QStringLiteral("正在同步音乐资料…") : music.libraryName();
         label = "查看我的音乐 →";
         action = "saved";
-        if (!music.isLocal() && music.uid.isEmpty() && !music.restoringAccount) {
-            title = "登录后查看";
-            label = "登录" + music.providerName() + " →";
-            action = "music:login";
-        }
     }
     limited(title, x, 509, 28, width - x - 59, "bold");
     rule(x, 601, width - x - 59);

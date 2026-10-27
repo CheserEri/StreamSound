@@ -483,6 +483,34 @@ elseif(UNIX)
     # 凭据文件的位置和权限随平台不同，回归测试直接使用真实实现而不是桩。
     target_sources(RhinePlatformRegression PRIVATE Qt/src/PlatformLinux.cpp)
 endif()
+# 回归测试统一跑在 offscreen 平台上，而 windeployqt 只会部署 qwindows 插件：
+# 缺少平台插件时 Qt 会弹出模态框，把测试阻塞到超时。
+if(NOT DEFINED QT6_INSTALL_PLUGINS)
+    get_filename_component(QT6_INSTALL_PLUGINS "${Qt6_DIR}/../../../plugins" ABSOLUTE)
+endif()
+# Qt6 导出的 QT6_INSTALL_PLUGINS 是相对安装前缀的路径，这里统一解析成绝对路径。
+get_filename_component(RHINE_QT_PLUGINS "${QT6_INSTALL_PLUGINS}" ABSOLUTE BASE_DIR "${Qt6_DIR}/../../..")
+# 把 offscreen/minimal 平台插件部署到可执行文件目录，这样 ctest、IDE 与双击三种启动方式
+# 都不会再缺插件（windeployqt 只部署 qwindows）。应用与各回归测试目标共用同一输出目录，
+# release 与 debug 两套文件名都复制，避免配置不匹配时插件加载失败又退回模态框。
+if(WIN32)
+    set(RHINE_QPA_CANDIDATES "qoffscreen.dll;qoffscreend.dll;qminimal.dll;qminimald.dll")
+else()
+    set(RHINE_QPA_CANDIDATES "libqoffscreen.so;libqminimal.so")
+endif()
+set(RHINE_QPA_COMMANDS
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:RhineMusicDatabase>/platforms")
+foreach(_plugin IN LISTS RHINE_QPA_CANDIDATES)
+    if(EXISTS "${RHINE_QT_PLUGINS}/platforms/${_plugin}")
+        list(APPEND RHINE_QPA_COMMANDS
+             COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                     "${RHINE_QT_PLUGINS}/platforms/${_plugin}"
+                     "$<TARGET_FILE_DIR:RhineMusicDatabase>/platforms/${_plugin}")
+    endif()
+endforeach()
+add_custom_target(rhine_qpa_plugins ALL ${RHINE_QPA_COMMANDS}
+    COMMENT "部署 offscreen/minimal 平台插件，供回归测试离屏运行"
+    VERBATIM)
 add_test(NAME qt_platform_regression COMMAND RhinePlatformRegression
                                              "${CMAKE_CURRENT_BINARY_DIR}/platform-regression")
 set_tests_properties(qt_platform_regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

@@ -53,7 +53,7 @@ NativeHud::NativeHud(Host *host, Glyphs *glyphs, MusicLibrary *music, HudSceneAc
 
 void NativeHud::openModal(QString kind) {
     if (m_music->isLocal() &&
-        QStringList{"login", "quality", "playlist-picker", "playlist-form"}.contains(kind)) {
+        QStringList{"quality", "playlist-picker", "playlist-form"}.contains(kind)) {
         return;
     }
     if (kind == "discover" && m_music->isLocal()) {
@@ -78,9 +78,6 @@ void NativeHud::openModal(QString kind) {
     categoryPage = 0;
     if (kind == "saved") {
         musicCollection = std::max(1, m_music->selectedLane);
-        if (m_music->provider == "kugou" && musicCollection == 4) {
-            musicCollection = 2;
-        }
         if (m_music->lists[musicCollection].isEmpty()) {
             m_music->loadMoreSource(musicCollection);
         }
@@ -92,9 +89,6 @@ void NativeHud::openModal(QString kind) {
 
 void NativeHud::closeModal() {
     ++m_searchGeneration;
-    if (modal == "login") {
-        m_music->cancelLogin();
-    }
     closing = true;
     motion.set(false, lastTime, reduced);
 }
@@ -111,24 +105,11 @@ void NativeHud::setQuery(QString value) {
                 return;
             }
             owner->m_music->search(value);
-            if (owner->m_music->provider == "netease" && !owner->m_host->fromLink(value).isEmpty()) {
-                owner->closeModal();
-            }
         });
     }
 }
 
 void NativeHud::form(QJsonObject fields) {
-    if (modal == "login" && m_music->loginMethod == "phone" && fields["account"].isString() &&
-        fields["captcha"].isString() && fields["account"].toString().size() <= 100 &&
-        fields["captcha"].toString().size() <= 8) {
-        m_music->captchaLogin(fields["account"].toString(), fields["captcha"].toString());
-    }
-    if (modal == "login" && m_music->loginMethod == "password" && fields["account"].isString() &&
-        fields["captcha"].isString() && fields["account"].toString().size() <= 100 &&
-        fields["captcha"].toString().size() <= 100) {
-        m_music->passwordLogin(fields["account"].toString(), fields["captcha"].toString());
-    }
     if (modal == "playlist-form" && fields["name"].isString()) {
         const QPointer<NativeHud> owner(this);
         const auto token = m_searchGeneration;
@@ -137,6 +118,29 @@ void NativeHud::form(QJsonObject fields) {
                 owner->closeModal();
             }
         });
+    }
+    if (modal == "server" && fields["name"].isString()) {
+        const auto address = fields["name"].toString().trimmed();
+        if (address.isEmpty() || address.size() > 2048) {
+            return;
+        }
+        // 立即保存并重启桥接，再异步探测新地址是否可达。
+        m_host->setServerAddress(address);
+        closeModal();
+        m_music->status = QStringLiteral("正在连接 ") + address + QStringLiteral(" …");
+        m_music->changed();
+        const QPointer<MusicLibrary> music(m_music);
+        m_music->api.call(
+            "server", {},
+            [music, address](MusicReply result) {
+                if (!music) {
+                    return;
+                }
+                music->status = result.ok() ? QStringLiteral("已连接服务器：") + address
+                                            : QStringLiteral("服务器不可达：") + result.error;
+                music->changed();
+            },
+            [] { return true; });
     }
 }
 
@@ -360,6 +364,11 @@ void NativeHud::action(QString value) {
         settingsScroll = std::clamp(settingsScroll + movement, 0., settingsScrollMaximum());
         return;
     }
+    // 设置页「服务器地址」入口：复用通用文本输入弹窗。
+    if (value == "settings:server") {
+        openModal("server");
+        return;
+    }
 
     if (value.startsWith("update:")) {
         auto &updater = m_host->updater;
@@ -397,10 +406,6 @@ void NativeHud::action(QString value) {
         if (music.current.value("kind") == "song" && tab != "overview") {
             music.sameAlbum();
         }
-        return;
-    }
-    if (value == "provider") {
-        openModal("provider");
         return;
     }
     if (value.startsWith("provider:")) {

@@ -231,8 +231,8 @@ int main(int argc, char **argv) {
     check(sceneContent.open(QIODevice::ReadOnly), "load independent scene content");
     MusicLibrary music(&host, QJsonDocument::fromJson(sceneContent.readAll()).object());
     QStringList requests;
-    bool missingFirstCover = false;
     host.fixture = [&](QString route, QJsonObject values) {
+        Q_UNUSED(values);
         requests.append(route);
         if (route == "/local/lyrics") {
             return QJsonObject{{"body", QJsonObject{{"code", 200}, {"document", document("local")}}}};
@@ -241,11 +241,9 @@ int main(int argc, char **argv) {
         QJsonValue response;
         if (operation == "search") {
             auto candidate = song;
-            candidate["provider"] = "netease";
+            candidate["provider"] = "streamsound";
             candidate["id"] = "7";
-            candidate["cover"] = missingFirstCover && route.contains("netease")
-                                     ? QString()
-                                     : QStringLiteral("https://music.126.net/local-fixture.png");
+            candidate["cover"] = QStringLiteral("https://music.126.net/local-fixture.png");
             response = QJsonObject{{"items", QJsonArray{candidate}}};
         } else if (operation == "lyrics") {
             response = document();
@@ -259,14 +257,12 @@ int main(int argc, char **argv) {
     music.search("Changed");
     check(music.lists[0].size() == 1 && requests.isEmpty(),
           "local search and selection issue no online request");
-    music.startLogin();
     music.restoreAccount();
-    music.restoreIdentityName();
     music.playOfficial();
     check(requests.isEmpty() && !music.editable() && !music.canMutate("/like") && music.provider == "local",
-          "local mode disables login, account, writes and official delivery");
+          "local mode disables account restore, writes and official delivery");
     bool rejected = false;
-    host.requestJson("/native/netease/playback", {},
+    host.requestJson("/native/streamsound/playback", {},
                      [&](QJsonObject, QString error) { rejected = !error.isEmpty(); });
     check(rejected && requests.isEmpty(), "transport rejects online playback in local mode");
     const auto track = music.lists[0].first().toObject();
@@ -278,7 +274,6 @@ int main(int argc, char **argv) {
     music.player.stop();
     requests.clear();
     check(QFile::remove(root + "/album/one.lrc"), "remove sidecar lyrics");
-    missingFirstCover = true;
     auto missing = song;
     missing["cover"] = "";
     missing["localLyrics"] = "";
@@ -287,11 +282,11 @@ int main(int argc, char **argv) {
                      [&](QString, QString url) { matchedCover = url; });
     music.player.lyrics.load(missing);
     check(waitFor([&] { return music.player.lyrics.status == "ready" && !matchedCover.isEmpty(); }) &&
-              requests.contains("/native/netease/search") && requests.contains("/native/netease/lyrics") &&
-              !matchedCover.isEmpty() && requests.contains("/native/qq/search"),
+              requests.contains("/native/streamsound/search") &&
+              requests.contains("/native/streamsound/lyrics") && !matchedCover.isEmpty(),
           "missing local metadata reuses existing online recording and lyrics matching");
-    music.switchProvider("qq");
-    check(music.provider == "qq" && music.columns[1] == "喜欢的歌曲" && music.local->songs().size() == 1 &&
+    music.switchProvider("streamsound");
+    check(music.provider == "streamsound" && music.local->songs().size() == 1 &&
               music.player.queue.isEmpty(),
           "switch restores online columns and retains independent local index");
     if (QMediaDevices::defaultAudioOutput().isNull()) {

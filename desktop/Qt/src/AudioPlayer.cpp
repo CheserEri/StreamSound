@@ -293,27 +293,18 @@ bool AudioPlayer::load(QString input, bool offline, bool alternative, QString pr
     }
     QUrl url(input);
     const auto host = url.host();
-    const bool qq = provider == "qq" && (host == "qqmusic.qq.com" || host.endsWith(".qqmusic.qq.com"));
-    const bool kugou = provider == "kugou" && (host.endsWith(".kugou.com") || host.endsWith(".kugou.net"));
     // StreamSound 的音频由桥接内置的本地代理转发，只允许回环地址。
     const bool localProxy = provider == "streamsound" && host == "127.0.0.1";
-    const bool trusted =
-        qq || kugou || localProxy ||
-        (provider == "netease" && (host == "music.126.net" || host.endsWith(".music.126.net") ||
-                                   host == "music.163.com" || host.endsWith(".music.163.com")));
-    const QStringList providers{"qq.com", "gtimg.com", "kuwo.cn", "kugou.com", "migu.cn"};
-    const bool alternateHost =
-        alternative && std::any_of(providers.begin(), providers.end(), [&](const auto &domain) {
-            return host == domain || host.endsWith("." + domain);
-        });
+    const bool trusted = localProxy;
+    Q_UNUSED(alternative);
     if ((offline || provider == "local")
             ? !url.isLocalFile()
-            : (!(trusted || alternateHost) || !QStringList{"http", "https"}.contains(url.scheme()))) {
+            : (!trusted || !QStringList{"http", "https"}.contains(url.scheme()))) {
         diagnose("load-rejected");
         return false;
     }
-    // 酷狗音源沿用上游返回的协议与签名地址；本地代理必须保持 http。
-    if (url.scheme() == "http" && !kugou && !localProxy) {
+    // 本地代理必须保持 http，不能升级为 https。
+    if (url.scheme() == "http" && !localProxy) {
         url.setScheme("https");
     }
     ++sourceSerial;
@@ -327,7 +318,7 @@ bool AudioPlayer::load(QString input, bool offline, bool alternative, QString pr
     } else if (url.scheme() == "http") {
         sourceKind = 2;
     }
-    sourceProvider = QStringList{"other", "netease", "qq", "kugou", "local", "streamsound"}.indexOf(provider);
+    sourceProvider = QStringList{"other", "streamsound", "local"}.indexOf(provider);
     sourceProvider = std::max(0, sourceProvider);
     decodedBuffers = 0;
     decodedBytes = 0;

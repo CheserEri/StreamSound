@@ -8,7 +8,8 @@
 #include <cmath>
 
 namespace {
-const QStringList PROVIDERS{"netease", "qq", "kugou", "streamsound"};
+// 只剩自建服务参与在线歌词匹配。
+const QStringList PROVIDERS{"streamsound"};
 constexpr int CACHE_LIMIT = 12;
 
 QString comparable(QString value) {
@@ -77,7 +78,7 @@ QString LyricsController::trackKey(const QJsonObject &track) {
     if (track.isEmpty()) {
         return {};
     }
-    const auto key = track["provider"].toString("netease") + ":" + track["id"].toString();
+    const auto key = track["provider"].toString("streamsound") + ":" + track["id"].toString();
     return track["provider"] == "local" ? key + ':' + track["fingerprint"].toString() : key;
 }
 
@@ -205,7 +206,7 @@ void LyricsController::loadCandidateCover(const Pending &pending, const QJsonObj
 /** 本地歌曲歌词来源选择 */
 void LyricsController::selectLocalSource(const QJsonObject &track, const QString &source) {
     if (track["provider"] != "local" || track["id"].toString().isEmpty() ||
-        !QStringList{"auto", "local", "netease", "qq", "kugou", "streamsound"}.contains(source)) {
+        !QStringList{"auto", "local", "streamsound"}.contains(source)) {
         return;
     }
     if (m_localSources.size() >= 200 && !m_localSources.contains(track["id"].toString())) {
@@ -248,7 +249,7 @@ void LyricsController::load(const QJsonObject &track, bool retry) {
     auto pending = std::make_shared<Load>();
     pending->generation = m_generation;
     pending->track = track;
-    api(track["provider"].toString("netease"))
+    api(track["provider"].toString("streamsound"))
         .call(
             "lyrics", {track},
             [this, pending](MusicReply result) {
@@ -267,7 +268,7 @@ void LyricsController::load(const QJsonObject &track, bool retry) {
 }
 
 void LyricsController::supplement(const Pending &pending) {
-    const auto source = pending->track["provider"].toString("netease");
+    const auto source = pending->track["provider"].toString("streamsound");
     while (pending->provider < PROVIDERS.size() &&
            (PROVIDERS[pending->provider] == source ||
             (!pending->lyricSource.isEmpty() && PROVIDERS[pending->provider] != pending->lyricSource))) {

@@ -18,7 +18,7 @@ class MusicApi : public QObject {
     using Reply = std::function<void(MusicReply)>;
     using Valid = std::function<bool()>;
     explicit MusicApi(Host *host, QObject *parent = nullptr);
-    QString provider = "netease";
+    QString provider = "streamsound";
     void call(QString operation, QJsonArray arguments, Reply callback, Valid valid = [] { return true; });
     void request(
         QString route, QJsonObject parameters, Reply callback, Valid valid = [] { return true; },

@@ -1,5 +1,4 @@
 #include "BridgeProcess.h"
-#include "AppStorage.h"
 #include "IOSServerTrust.h"
 #include <QCoreApplication>
 #include <QFileInfo>
@@ -139,7 +138,7 @@ BridgeProcess::~BridgeProcess() {
         runtime().owner.clear();
     }
 }
-void BridgeProcess::start(const QString &root, const QString &temporary, const QString &edition) {
+void BridgeProcess::start(const QString &root, const QString &temporary, const QString &server) {
     m_state = Starting;
     m_session = QUuid::createUuid().toString(QUuid::WithoutBraces);
     runtime().owner = this;
@@ -149,9 +148,7 @@ void BridgeProcess::start(const QString &root, const QString &temporary, const Q
     }
     QJsonObject environment{
         {"TMPDIR", temporary},
-        {"RHINE_QQ_DEVICE_STATE_PATH", AppStorage::dataDirectory() + "/qq-device.json"},
-        {"RHINE_KUGOU_DEVICE_STATE_PATH", AppStorage::dataDirectory() + "/kugou-device.json"},
-        {"RHINE_KUGOU_EDITION", edition}};
+        {"STREAMSOUND_SERVER", server}};
     runtime().send({{"type", "start"},
                     {"session", m_session},
                     {"script", root + "/MusicBridge/worker.cjs"},

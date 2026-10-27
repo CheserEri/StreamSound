@@ -16,74 +16,32 @@ QJsonArray without(const QJsonArray &values, const QString &field, const QJsonVa
 }
 
 bool MusicLibrary::canMutate(const QString &route) const {
-    if (provider == "netease") {
-        return true;
+    // 自建服务只开放点赞写入。
+    if (provider == "streamsound") {
+        return route == "/like";
     }
-    if (provider != "qq") {
-        return false;
-    }
-    static const QHash<QString, QStringList> features{
-        {"/like", {"mutations", "likeSong"}},
-        {"/album/sub", {"mutations", "subscribeAlbum"}},
-        {"/playlist/subscribe", {"mutations", "subscribePlaylist"}},
-        {"/playlist/tracks", {"mutations", "updatePlaylistTracks"}},
-        {"/playlist/create", {"playlistManagement", "createPlaylist"}},
-        {"/playlist/name/update", {"playlistManagement", "renamePlaylist"}},
-        {"/playlist/delete", {"playlistManagement", "deletePlaylist"}},
-    };
-    const auto feature = features.value(route);
-    if (feature.isEmpty()) {
-        return false;
-    }
-    // 暂时读不到声明时仍沿用精确锁定版本的契约；明确关闭的能力禁止写入。
-    return capabilities.isEmpty() || capabilities[feature[0]].toObject()[feature[1]].toBool();
+    return false;
 }
 
 bool MusicLibrary::canEditPlaylist(const QJsonObject &value) const {
-    if (!editable() || uid.isEmpty() || value["kind"] != "playlist" || value["creatorID"] != uid) {
-        return false;
-    }
-    if (provider != "qq") {
-        return true;
-    }
-    bool parsed = false;
-    const auto directoryId = value["dirId"].toString().toInt(&parsed);
-    return value["owned"].toBool() && parsed && directoryId >= 1 && directoryId <= 199;
+    Q_UNUSED(value);
+    // 自建服务不支持歌单编辑。
+    return false;
 }
 
-/** 按当前账号与选中条目读取三态收藏信息。 */
+/** 自建服务不提供收藏三态查询，红心状态直接来自点赞列表。 */
 void MusicLibrary::loadSubscriptionStatus(const QJsonObject &value) {
-    const auto kind = value["kind"].toString();
-    if (provider != "qq" || uid.isEmpty() || value["virtual"].toBool() ||
-        !QStringList{"song", "album", "playlist"}.contains(kind)) {
-        return;
-    }
-    const auto key = value["key"].toString();
-    const auto token = ++m_subscriptionGeneration;
-    const auto accountAlive = valid(m_accountGeneration, &m_accountGeneration);
-    const auto selectionAlive = valid(token, &m_subscriptionGeneration);
-    api.call(
-        "subscriptionStatus", {kind, value["id"]},
-        [this, key](MusicReply result) {
-            if (current["key"] != key) {
-                return;
-            }
-            subscriptionStates[key] = result.ok() ? result.value.toString("unknown") : "unknown";
-            changed();
-        },
-        [accountAlive, selectionAlive] { return accountAlive() && selectionAlive(); });
+    Q_UNUSED(value);
 }
 
 /** 写操作串行化并核对账号代数；成功后才更新本地集合和失效元数据缓存。 */
 void MusicLibrary::mutate(QString route, QJsonObject values, std::function<void(QJsonObject)> success,
                           Completion done) {
     if (!canMutate(route) || writeLoading || uid.isEmpty()) {
-        if (!editable()) {
-            status = providerName() + QStringLiteral("当前支持读取与播放");
-        } else if (uid.isEmpty()) {
-            status = QStringLiteral("请先登录") + providerName();
-        } else if (!canMutate(route)) {
-            status = QStringLiteral("当前 QQ 服务未开放此编辑功能");
+        if (uid.isEmpty()) {
+            status = QStringLiteral("请先在设置中配置服务器地址");
+        } else {
+            status = providerName() + QStringLiteral("当前仅支持读取与播放");
         }
         changed();
         if (done) {
@@ -143,7 +101,7 @@ void MusicLibrary::like(QJsonObject value) {
         return;
     }
     if (uid.isEmpty()) {
-        status = QStringLiteral("请先登录") + providerName();
+        status = QStringLiteral("请先在设置中配置服务器地址");
         changed();
         return;
     }

@@ -19,9 +19,9 @@ export default async function streamRoutes(fastify: FastifyInstance) {
    * 音频流接口
    * GET /stream/:id
    * 
-   * 需要认证，流式传输指定歌曲文件，支持 Range 请求（断点续传）
+   * 流式传输指定歌曲文件，支持 Range 请求（断点续传）
    */
-  fastify.get('/stream/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.get('/stream/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
     const trackId = parseId(id);
 

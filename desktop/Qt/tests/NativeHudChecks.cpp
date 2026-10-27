@@ -52,7 +52,6 @@ MusicLibrary *createTestMusicLibrary(Host *host, const QString &provider, const 
     music->nickname = "测试账号";
     music->status = "离线固定时间校验";
     music->keyword = "本地";
-    music->loginStatus = "等待确认";
     music->coverImage.clear();
     music->likedIDs = QJsonArray{"1"};
 
@@ -93,8 +92,8 @@ bool runNativeHudChecks(const QString &root, Glyphs &glyphs) {
     bool ok = true;
     int testCount = 0;
 
-    // 测试所有平台和主题组合
-    for (const auto &provider : {QString("netease"), QString("qq"), QString("kugou")}) {
+    // 测试唯一在线来源与两种主题组合
+    for (const auto &provider : {QString("streamsound")}) {
         for (const bool dark : {false, true}) {
             testCount++;
 
@@ -343,24 +342,10 @@ bool runNativeHudChecks(const QString &root, Glyphs &glyphs) {
             }
 
             // === 测试 6: 其他关键面板存在性检查 ===
-            const QStringList criticalPanels = {"search", "login", "player", "confirm"};
+            const QStringList criticalPanels = {"search", "player", "confirm"};
             for (const auto &panel : criticalPanels) {
                 hud.openModal(panel);
                 hud.draw(archiveFrame, 1920, 50);
-
-                if (panel == "login" && provider == "netease") {
-                    if (!hasAction(hud.hits, "music:login-method:phone") ||
-                        hasAction(hud.hits, "music:login-method:email")) {
-                        qCritical() << "NetEase login must offer SMS without email password";
-                        ok = false;
-                    }
-                    hud.action("music:login-method:phone");
-                    hud.action("music:login-method:email");
-                    if (music->loginMethod != "phone") {
-                        qCritical() << "Disabled email login action was accepted";
-                        ok = false;
-                    }
-                }
 
                 if (hud.commands.isEmpty()) {
                     qCritical() << "Panel commands empty:" << panel << provider << (dark ? "dark" : "light");

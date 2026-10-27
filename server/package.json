@@ -12,8 +12,6 @@
   },
   "dependencies": {
     "@fastify/cors": "^10.0.2",
-    "@fastify/jwt": "^9.0.2",
-    "bcrypt": "^5.1.1",
     "better-sqlite3": "^11.8.1",
     "dotenv": "^17.4.2",
     "fastify": "^5.2.0",
@@ -25,7 +23,6 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/bcrypt": "^5.0.2",
     "@types/better-sqlite3": "^7.6.12",
     "@types/dotenv": "^6.1.1",
     "@types/node": "^22.10.5",

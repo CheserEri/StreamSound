@@ -166,13 +166,15 @@ class AudioPlayerRegression {
         AudioPlayer audio;
         audio.defaultOutput = [] { return QAudioDevice(); };
         audio.followDefaultOutput();
-        const QString raw("http://fs.kugou.com/fixture.mp3?key=fixture&filename=a%20b");
-        bool ok = check(audio.load(raw, false, false, "kugou") && audio.pendingSource == QUrl(raw),
-                        "Kugou preserves upstream scheme and signed query");
+        // 自建服务音频经桥接本地代理转发，必须原样保留回环 http 与签名查询。
+        const QString raw("http://127.0.0.1:18080/fixture.mp3?key=fixture&filename=a%20b");
+        bool ok = check(audio.load(raw, false, false, "streamsound") && audio.pendingSource == QUrl(raw),
+                        "StreamSound loopback proxy preserves scheme and signed query");
         audio.control("stop");
-        ok &= check(audio.load("http://music.126.net/fixture.mp3", false, false, "netease") &&
-                        audio.pendingSource.scheme() == "https",
-                    "NetEase keeps existing CDN compatibility");
+        const auto local = QUrl::fromLocalFile("/tmp/fixture.mp3").toString();
+        ok &= check(audio.load(local, false, false, "local") && audio.pendingSource == QUrl(local) &&
+                        audio.pendingSource.isLocalFile(),
+                    "Local files keep the file scheme");
         audio.control("stop");
         return ok;
     }

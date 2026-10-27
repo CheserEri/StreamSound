@@ -19,9 +19,9 @@ void NativeHud::musicAction(const QStringList &parts, const QString &value) {
     const auto name = parts.value(1);
     const auto last = parts.constLast().toInt();
     if (music.isLocal() &&
-        QStringList{"login", "logout", "qr", "login-method", "kugou-edition", "like", "like-current",
-                    "subscribe", "create-playlist", "delete-playlist", "rename-playlist", "add-to-playlist",
-                    "playlist-pick", "official", "source", "refresh-personal", "activate", "remove-track"}
+        QStringList{"like", "like-current", "subscribe", "create-playlist", "delete-playlist",
+                    "rename-playlist", "add-to-playlist", "playlist-pick", "official", "source",
+                    "refresh-personal", "activate", "remove-track"}
             .contains(name)) {
         return;
     }
@@ -171,7 +171,7 @@ void NativeHud::musicAction(const QStringList &parts, const QString &value) {
         pageResults(name == "page-prev" ? -1 : 1);
     } else if (name == "play") {
         music.play();
-    } else if (name == "preview" && music.provider == "qq") {
+    } else if (name == "preview") {
         music.player.play(music.current, std::nullopt, std::nullopt, true);
     } else if (name == "play-next" || name == "enqueue") {
         music.player.enqueue(music.current, name == "play-next");
@@ -205,32 +205,6 @@ void NativeHud::musicAction(const QStringList &parts, const QString &value) {
             {"project-lyrimuse", "https://github.com/Yudaotor/lyrimuse"}};
         if (links.contains(name)) {
             m_host->open(links[name]);
-        }
-    } else if (name == "login") {
-        openModal("login");
-        music.loginMethod = music.provider == "streamsound" ? "password" : "qr";
-        music.startLogin();
-    } else if (name == "kugou-edition") {
-        const QPointer<NativeHud> owner(this);
-        const auto token = m_searchGeneration;
-        music.switchProvider("kugou", parts.value(2), [owner, token](bool ok) {
-            if (ok && owner && owner->modal == "login" && owner->m_searchGeneration == token) {
-                owner->m_music->startLogin();
-            }
-        });
-    } else if (name == "login-method") {
-        const auto method = parts.value(2);
-        const bool supported = method == "qr" || (music.provider == "netease" && method == "phone") ||
-                               (music.provider == "qq" && method == "wechat") ||
-                               (music.provider == "streamsound" && method == "password");
-        if (!supported) {
-            return;
-        }
-        music.cancelLogin();
-        music.loginMethod = method;
-        music.loginStatus.clear();
-        if (QStringList{"qr", "wechat", "password"}.contains(music.loginMethod)) {
-            music.startLogin();
         }
     } else if (name == "refresh-personal") {
         music.refreshPersonal(musicCollection);
@@ -289,10 +263,6 @@ void NativeHud::musicAction(const QStringList &parts, const QString &value) {
                 owner->closeModal();
             }
         });
-    } else if (name == "qr") {
-        music.startLogin();
-    } else if (name == "logout") {
-        music.logout();
     } else if (name == "cover-front" || name == "cover-back") {
         m_scene.coverFront(name == "cover-front");
     } else if (name == "activate") {

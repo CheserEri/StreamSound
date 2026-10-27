@@ -2,21 +2,8 @@
  * 类型定义文件
  * 定义数据库行类型、API 数据传输对象和其他类型
  */
-import type { FastifyRequest, FastifyReply } from 'fastify';
 
 // ==================== 数据库行类型 ====================
-
-/**
- * 用户表行类型
- */
-export interface UserRow {
-  id: number;                // 用户 ID
-  username: string;          // 用户名
-  password: string;          // 加密后的密码
-  role: 'user' | 'admin';    // 用户角色
-  approved: number;          // 是否通过审核 (0/1)
-  created_at: number;        // 创建时间戳
-}
 
 /**
  * 文件夹表行类型
@@ -55,7 +42,6 @@ export interface TrackRow {
  * 收藏表行类型
  */
 export interface FavoriteRow {
-  user_id: number;           // 用户 ID
   track_id: number;          // 歌曲 ID
   created_at: number;        // 收藏时间戳
 }
@@ -65,7 +51,6 @@ export interface FavoriteRow {
  */
 export interface PlayHistoryRow {
   id: number;                // 记录 ID
-  user_id: number;           // 用户 ID
   track_id: number;          // 歌曲 ID
   played_at: number;         // 播放时间戳
 }
@@ -137,17 +122,6 @@ export interface HistoryTrackDTO {
 }
 
 /**
- * 用户 DTO
- */
-export interface UserDTO {
-  id: number;
-  username: string;
-  role: string;
-  approved: boolean;
-  createdAt: number;
-}
-
-/**
  * 搜索结果歌曲 DTO
  */
 export interface SearchTrackDTO {
@@ -197,17 +171,6 @@ export interface Pagination {
   offset: number;  // 偏移量
 }
 
-// ==================== JWT 相关类型 ====================
-
-/**
- * JWT Payload 类型
- */
-export interface JWTPayload {
-  id: number;
-  username: string;
-  role: 'user' | 'admin';
-}
-
 // ==================== 扫描状态类型 ====================
 
 /**
@@ -235,15 +198,6 @@ export interface ScanState {
   startedAt: number | null;
   finishedAt: number | null;
   musicRoot: string | null;
-}
-
-// ==================== Fastify 类型扩展 ====================
-
-declare module 'fastify' {
-  interface FastifyRequest {
-    userId: number;
-    userRole: 'user' | 'admin';
-  }
 }
 
 // ==================== 支持的音频格式 ====================

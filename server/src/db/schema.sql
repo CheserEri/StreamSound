@@ -1,13 +1,3 @@
--- Users table
-CREATE TABLE IF NOT EXISTS users (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    username    TEXT    NOT NULL UNIQUE,
-    password    TEXT    NOT NULL,
-    role        TEXT    NOT NULL DEFAULT 'user',
-    approved    INTEGER NOT NULL DEFAULT 1,
-    created_at  INTEGER NOT NULL
-);
-
 -- Folders table
 CREATE TABLE IF NOT EXISTS folders (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,16 +29,13 @@ CREATE TABLE IF NOT EXISTS tracks (
 
 -- Favorites table
 CREATE TABLE IF NOT EXISTS favorites (
-    user_id     INTEGER NOT NULL REFERENCES users(id),
-    track_id    INTEGER NOT NULL REFERENCES tracks(id),
-    created_at  INTEGER NOT NULL,
-    PRIMARY KEY (user_id, track_id)
+    track_id    INTEGER PRIMARY KEY REFERENCES tracks(id),
+    created_at  INTEGER NOT NULL
 );
 
 -- Play history table
 CREATE TABLE IF NOT EXISTS play_history (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id     INTEGER NOT NULL REFERENCES users(id),
     track_id    INTEGER NOT NULL REFERENCES tracks(id),
     played_at   INTEGER NOT NULL
 );
@@ -57,8 +44,8 @@ CREATE TABLE IF NOT EXISTS play_history (
 CREATE INDEX IF NOT EXISTS idx_tracks_folder    ON tracks(folder_id);
 CREATE INDEX IF NOT EXISTS idx_tracks_title     ON tracks(title);
 CREATE INDEX IF NOT EXISTS idx_tracks_artist    ON tracks(artist);
-CREATE INDEX IF NOT EXISTS idx_history_user     ON play_history(user_id, played_at DESC);
-CREATE INDEX IF NOT EXISTS idx_favorites_user   ON favorites(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_history_played   ON play_history(played_at DESC);
+CREATE INDEX IF NOT EXISTS idx_favorites_created ON favorites(created_at DESC);
 
 -- FTS5 virtual table for full-text search
 CREATE VIRTUAL TABLE IF NOT EXISTS tracks_fts USING fts5(

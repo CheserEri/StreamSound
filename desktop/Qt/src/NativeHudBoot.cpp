@@ -121,7 +121,7 @@ void NativeHud::boot(double width) {
         const auto count = key == "identity" ? std::min(auth.size(), prefix.size()) : auth.size();
         art(key, 931, 527, size, count, tracking);
         if (key == "identity" && auth.size() >= prefix.size()) {
-            const auto nickname = m_music->identityName();
+            const auto nickname = QStringLiteral("STREAMSOUND");
             const auto characters = nickname.toUcs4();
             const auto length = characters.isEmpty() ? 5 : characters.size();
             const auto frame = number("f");

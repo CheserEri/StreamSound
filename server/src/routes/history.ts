@@ -9,7 +9,7 @@ import { HIST_001, sendError } from '../types/errors.js';
 import { parsePagination } from '../utils/pagination.js';
 import { parseId, isValidId } from '../utils/params.js';
 
-// 每个用户最大保存的历史记录数
+// 最大保存的历史记录数
 const MAX_HISTORY = 50;
 
 /**
@@ -21,27 +21,26 @@ export default async function historyRoutes(fastify: FastifyInstance) {
    * 获取播放历史接口
    * GET /history
    * 
-   * 需要认证，返回当前用户的播放历史（按播放时间倒序，去重）
+   * 返回播放历史（按播放时间倒序，去重）
    */
-  fastify.get('/history', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.get('/history', async (request, reply) => {
     const { limit: safeLimit, offset: safeOffset } = parsePagination(request.query as { limit?: number; offset?: number }, MAX_HISTORY);
     const db = getDb();
 
-    // 查询用户播放历史（按歌曲去重，取最后播放时间）
+    // 查询播放历史（按歌曲去重，取最后播放时间）
     const tracks = db.prepare(`
       SELECT t.id, t.title, t.artist, t.album, t.duration, t.cover_path, h.played_at
       FROM play_history h
       JOIN tracks t ON t.id = h.track_id
-      WHERE h.user_id = ?
       GROUP BY h.track_id
       ORDER BY MAX(h.played_at) DESC
       LIMIT ? OFFSET ?
-    `).all(request.userId, safeLimit, safeOffset) as (TrackRow & { played_at: number })[];
+    `).all(safeLimit, safeOffset) as (TrackRow & { played_at: number })[];
 
     // 查询历史记录总数（去重）
     const total = (db.prepare(
-      'SELECT COUNT(DISTINCT track_id) as count FROM play_history WHERE user_id = ?',
-    ).get(request.userId) as { count: number }).count;
+      'SELECT COUNT(DISTINCT track_id) as count FROM play_history',
+    ).get() as { count: number }).count;
 
     return reply.send({
       data: tracks.map((t) => ({
@@ -65,9 +64,9 @@ export default async function historyRoutes(fastify: FastifyInstance) {
    * 添加播放记录接口
    * POST /history/:id
    * 
-   * 需要认证，记录用户播放了指定歌曲
+   * 记录指定歌曲的播放
    */
-  fastify.post('/history/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.post('/history/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
     const trackId = parseId(id);
 
@@ -85,20 +84,19 @@ export default async function historyRoutes(fastify: FastifyInstance) {
 
     // 记录播放时间
     const now = Math.floor(Date.now() / 1000);
-    db.prepare('INSERT INTO play_history (user_id, track_id, played_at) VALUES (?, ?, ?)').run(
-      request.userId, trackId, now,
+    db.prepare('INSERT INTO play_history (track_id, played_at) VALUES (?, ?)').run(
+      trackId, now,
     );
 
     // 只保留最近的 MAX_HISTORY 条记录
     db.prepare(`
       DELETE FROM play_history
-      WHERE user_id = ? AND id NOT IN (
+      WHERE id NOT IN (
         SELECT id FROM play_history
-        WHERE user_id = ?
         ORDER BY played_at DESC
         LIMIT ?
       )
-    `).run(request.userId, request.userId, MAX_HISTORY);
+    `).run(MAX_HISTORY);
 
     return reply.send({
       data: {

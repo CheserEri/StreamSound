@@ -70,9 +70,9 @@ class MusicLibrary : public QObject {
     int libraryIndex() const;
     QString providerName() const;
     QString accountKey() const;
-    QString identityName() const;
     bool editable() const {
-        return provider == "netease" || provider == "qq";
+        // 自建服务只提供读取与播放，歌单编辑不在支持范围。
+        return false;
     }
     bool sourceLoading() const {
         return restoringAccount || searchLoading || personalLoading;
@@ -84,16 +84,6 @@ class MusicLibrary : public QObject {
     }
     void switchProvider(QString provider, QString edition = {}, Completion done = {});
     void restoreAccount(Completion done = {});
-    void passwordLogin(QString username, QString password);
-    void restoreIdentityName();
-    void startLogin();
-    void cancelLogin(Completion done = {});
-    void sendLoginCode(QString phone);
-    void captchaLogin(QString phone, QString captcha);
-    int smsRetrySeconds() const;
-    void logout();
-    int loginRetrySeconds() const;
-    bool canRegenerateLogin() const;
     void mutate(QString route, QJsonObject values, std::function<void(QJsonObject)> success,
                 Completion done = {});
     void like(QJsonObject value = {});
@@ -133,21 +123,13 @@ class MusicLibrary : public QObject {
     QString keyword;
     QString status = "输入关键词检索音乐";
     QString provider;
-    QString kugouEdition;
     QString uid;
-    QString nickname = "未登录";
-    QHash<QString, QString> identityNames;
+    QString nickname;
     int selectedPhysical = -1;
     int selectedLane = 0;
     bool detailLoading = false;
     QString coverImage;
     QString coverKey;
-    QString qr;
-    QString qrKey;
-    QString loginStatus;
-    QString loginPhase = "idle";
-    QString loginMethod = "qr";
-    QJsonObject loginDiagnostics;
     bool accountLoading = false;
     bool wantsSongDetails = false;
     std::shared_ptr<MusicDirectory> directory;
@@ -172,7 +154,6 @@ class MusicLibrary : public QObject {
     void loadSubscriptionStatus(const QJsonObject &value);
     QJsonObject capabilities;
     QString vipLevel = "unknown";
-    void refreshQQFeatures();
     bool canEditPlaylist(const QJsonObject &value) const;
     bool canMutate(const QString &route) const;
     QStringList searchHistory;
@@ -193,16 +174,6 @@ class MusicLibrary : public QObject {
     void musicClearRequested();
 
   private:
-    struct Cooldown {
-        qint64 deadline = 0;
-        QString message;
-        quint64 token = 0;
-    };
-    struct Cancellation {
-        QVector<Completion> waiters;
-    };
-    QHash<QString, std::shared_ptr<Cancellation>> m_cancellations;
-    QHash<QString, Cooldown> m_cooldowns;
     quint64 m_generation = 0;
     quint64 m_selectionGeneration = 0;
     quint64 m_accountGeneration = 0;
@@ -210,10 +181,6 @@ class MusicLibrary : public QObject {
     quint64 m_wikiGeneration = 0;
     quint64 m_suggestGeneration = 0;
     quint64 m_subscriptionGeneration = 0;
-    quint64 m_loginGeneration = 0;
-    quint64 m_cooldownGeneration = 0;
-    qint64 m_smsRetryAtMs = 0;
-    MusicApi m_identityApi;
     MusicApi::Valid valid(quint64 token, const quint64 *counter);
     void loadCover(const QJsonObject &value);
     void loadLikedIDs(int lane, quint64 token, QString user);
@@ -223,13 +190,4 @@ class MusicLibrary : public QObject {
     QString m_accountError;
     std::array<QString, 5> m_sourceErrors;
     void restoreCachedAccount();
-    void rememberIdentityName(QString provider, QString name);
-    void reportLoginFailure(const QJsonObject &details, QString message = {});
-    void updateLoginCooldown(QString source, Cooldown cooldown);
-    void prepareQR(quint64 token);
-    void pollQR(quint64 token, int count);
-    void confirmLogin(quint64 token, bool captcha = false);
-    void updateSmsCooldown();
-    void failLogin(const MusicReply &result);
-    void waitCancellation(QString provider, Completion done);
 };

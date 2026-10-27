@@ -14,16 +14,13 @@
 
 | 变量 | 默认值 | 说明 |
 | --- | --- | --- |
-| `PORT` | `3000` | 监听端口；桌面端默认连接 `8080`，建议设为 `8080` |
+| `PORT` | `8080` | 监听端口 |
 | `HOST` | `0.0.0.0` | 监听地址；仅本机使用时设为 `127.0.0.1` |
-| `MUSIC_ROOT` | `/music` | 音乐库根目录 |
+| `MUSIC_ROOT` | `/home/<user>/Music` | 音乐库根目录 |
 | `DB_PATH` | `./data/streamsound.db` | SQLite 文件路径 |
-| `JWT_SECRET` | 无 | 必填，使用随机长字符串 |
-| `JWT_ACCESS_EXPIRES` | `1h` | Access Token 有效期 |
-| `JWT_REFRESH_EXPIRES` | `30d` | Refresh Token 有效期 |
 | `SCAN_CRON` | `0 * * * *` | 定时扫描表达式 |
 | `SCAN_ON_START` | `true` | 启动时是否立即扫描 |
-| `REQUIRE_APPROVAL` | `false` | 新注册用户是否需要管理员审批 |
+| `LOG_LEVEL` | `info` | 日志级别 |
 
 ### 1.3 安装与运行
 
@@ -68,6 +65,21 @@ sudo systemctl enable --now streamsound
 sudo journalctl -u streamsound -f
 ```
 
+#### 1.4.1 当前部署（Ubuntu <server-ip>）
+
+| 项目 | 值 |
+| --- | --- |
+| 主机 / 用户 | `<server-ip>` / `<user>` |
+| 应用目录 | `/home/<user>/streamsound` |
+| 音乐根目录 | `/home/<user>/Music` |
+| 数据库 | `/home/<user>/streamsound/data/streamsound.db` |
+| systemd 单元 | `streamsound`（已 enable，`Restart=always`，`ExecStart=/usr/bin/node /home/<user>/streamsound/dist/index.js`） |
+| 日志 | `/home/<user>/streamsound/server.log` |
+| 防火墙 | `ufw allow 8080/tcp`；若存在针对 `8080/tcp` 的显式 DENY 规则需先删除 |
+| 已索引曲目 | 330 |
+
+`.env` 关键项：`PORT=8080`、`HOST=0.0.0.0`、`MUSIC_ROOT=/home/<user>/Music`、`DB_PATH=/home/<user>/streamsound/data/streamsound.db`、`SCAN_CRON="0 4 * * *"`、`SCAN_ON_START=true`、`LOG_LEVEL=info`。
+
 ### 1.5 反向代理与 TLS
 
 ```nginx
@@ -96,7 +108,7 @@ server {
 
 ### 1.6 扫描与备份
 
-- 定时扫描由 `SCAN_CRON` 控制；也可调用 `POST /admin/scan` 手动触发
+- 定时扫描由 `SCAN_CRON` 控制；也可调用 `POST /scan` 手动触发
 - 备份 SQLite 时使用在线备份，避免复制到写入中的 WAL：
 
 ```bash
@@ -157,11 +169,11 @@ RhineMusicDatabase/
 ├── resources/
 │   ├── slots.json ...
 │   └── MusicBridge/node.exe ...
-└── data/                # settings.ini、DPAPI 凭据、缓存
+└── data/                # settings.ini、缓存
 ```
 
-- 服务器地址：偏好项 `streamsound-server`，默认 `http://127.0.0.1:8080`
-- 登录态：`data/account.dpapi`（DPAPI 加密），退出登录时清除
+- 服务器地址：偏好项 `streamsound-server`，默认 `http://<server-ip>:8080`
+- 无登录态或凭据文件；客户端只保存上述地址偏好
 
 ### 2.5 其他平台
 
@@ -173,6 +185,6 @@ RhineMusicDatabase/
 | --- | --- |
 | 启动报缺少 `Qt6Widgets.dll` | 未执行 `windeployqt`，按 2.2 部署 |
 | 界面空白/无栏目 | 资源目录未就位，检查 `resources/slots.json` 与 `MusicBridge/` |
-| 登录提示连接失败 | 服务端未启动或 `streamsound-server` 地址/端口不一致 |
-| 无法播放 | 未登录、音频文件不可读，或代理端口被防火墙拦截 |
+| 连接服务器失败 | 服务端未启动或 `streamsound-server` 地址/端口不一致 |
+| 无法播放 | 音频文件不可读，或代理端口被防火墙拦截 |
 | 封面 404 | 音频文件没有内嵌封面，属正常现象 |

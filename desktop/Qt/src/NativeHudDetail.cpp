@@ -83,7 +83,8 @@ void NativeHud::detail(double width, double opacity) {
     if (music.isLocal()) {
         quality = MusicPlayer::localQuality(item);
     }
-    const auto badgeProvider = music.isLocal() ? QStringLiteral("netease") : music.provider;
+    // 音质徽标资源按统一档位命名，统一沿用既有图标资源。
+    const auto badgeProvider = QStringLiteral("netease");
     const auto badgeKey = "quality:" + badgeProvider + "-" + quality;
     const auto badge = quality.isEmpty() ? QImage() : m_host->image(badgeKey);
     double badgeWidth = 0;
@@ -95,9 +96,6 @@ void NativeHud::detail(double width, double opacity) {
             constexpr double badgeHeight = 25;
             badgeWidth = badgeHeight * badge.width() / badge.height();
             const auto badgeX = width * 0.927 - badgeWidth / 2;
-            if (music.provider == "kugou") {
-                fill(badgeX - 8, 307, badgeWidth + 16, badgeHeight + 10, {0.30, 0.33, 0.26, 1});
-            }
             image(badgeKey, badgeX, 312, badgeWidth, badgeHeight);
         } else {
             // 平台没有独立图标的普通档位用文字说明，不伪造官方徽标。
@@ -209,11 +207,7 @@ void NativeHud::detail(double width, double opacity) {
             "点击复制完整内容");
     }
     if (PlatformFeatures::OfficialPlayback && !music.isLocal()) {
-        actionButton(music.provider != "netease" ? music.providerName() + " ↗" : "官方客户端 ↗", x, 910,
-                     buttonWidth, "music:official");
-    }
-    if (music.provider == "qq") {
-        actionButton("试听片段", x + buttonWidth + gap, 910, buttonWidth, "music:preview");
+        actionButton(music.providerName() + " ↗", x, 910, buttonWidth, "music:official");
     }
     if (music.directory && music.canEditPlaylist(music.directory->item)) {
         actionButton("从歌单移除", x + (buttonWidth + gap) * 2, 910, buttonWidth, "music:remove-track");
@@ -383,12 +377,11 @@ void NativeHud::container(double width, double opacity) {
     image(music.coverImage, sx, 355, coverSize, coverSize);
     limited(item["title"].toString(), sx, coverSize + 374, 20, sideWidth, "bold");
     limited(item["artist"].toString(), sx, coverSize + 410, 14, sideWidth);
-    const QHash<QString, QString> prefixes{
-        {"qq", "QQ MID / "}, {"kugou", "KUGOU ID / "}, {"netease", "NETEASE ID / "}};
+    const auto prefix = music.providerName() + " ID / ";
     if (item["virtual"].toBool()) {
         text(music.providerName() + " / " + item["title"].toString(), sx, coverSize + 449, 11);
     } else {
-        text(prefixes.value(music.provider) + item["id"].toString(), sx, coverSize + 449, 11);
+        text(prefix + item["id"].toString(), sx, coverSize + 449, 11);
     }
     const auto ids = music.directory ? music.directory->ids.size() : 0;
     text(QString::number(std::max({item["trackCount"].toInt(), int(ids), int(songs.size())})) +

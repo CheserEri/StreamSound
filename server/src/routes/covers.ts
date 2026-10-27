@@ -19,9 +19,9 @@ export default async function coversRoutes(fastify: FastifyInstance) {
    * 获取封面图片接口
    * GET /covers/:id
    * 
-   * 需要认证，返回指定歌曲的封面图片
+   * 返回指定歌曲的封面图片
    */
-  fastify.get('/covers/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.get('/covers/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
     const trackId = parseId(id);
 

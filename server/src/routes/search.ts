@@ -16,9 +16,9 @@ export default async function searchRoutes(fastify: FastifyInstance) {
    * 搜索接口
    * GET /search
    * 
-   * 需要认证，支持搜索歌曲、歌手和专辑
+   * 支持搜索歌曲、歌手和专辑
    */
-  fastify.get('/search', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.get('/search', async (request, reply) => {
     const { q, limit = 20 } = request.query as { q?: string; limit?: number };
 
     // 参数验证

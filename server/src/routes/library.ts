@@ -4,7 +4,7 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { getDb } from '../db/client.js';
-import type { FolderRow, TrackRow, UserRow } from '../types/index.js';
+import type { FolderRow, TrackRow } from '../types/index.js';
 import { LIB_001, LIB_002, sendError } from '../types/errors.js';
 import { parsePagination } from '../utils/pagination.js';
 import { parseId, isValidId } from '../utils/params.js';
@@ -18,9 +18,9 @@ export default async function libraryRoutes(fastify: FastifyInstance) {
    * 获取文件夹列表接口
    * GET /library/folders
    * 
-   * 需要认证，返回所有音乐文件夹列表
+   * 返回所有音乐文件夹列表
    */
-  fastify.get('/library/folders', { preHandler: [fastify.authenticate] }, async (_request, reply) => {
+  fastify.get('/library/folders', async (_request, reply) => {
     const db = getDb();
     const folders = db.prepare('SELECT id, name, path, parent_id, track_count FROM folders ORDER BY id').all() as FolderRow[];
 
@@ -39,10 +39,10 @@ export default async function libraryRoutes(fastify: FastifyInstance) {
    * 获取文件夹内歌曲列表接口
    * GET /library/folders/:id/tracks
    * 
-   * 需要认证，返回指定文件夹中的歌曲列表（分页）
+   * 返回指定文件夹中的歌曲列表（分页）
    * 特殊：folderId=1 表示根目录，返回所有歌曲
    */
-  fastify.get('/library/folders/:id/tracks', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.get('/library/folders/:id/tracks', async (request, reply) => {
     const { id } = request.params as { id: string };
     const { sort = 'title', order = 'asc' } = request.query as {
       sort?: string;
@@ -116,9 +116,9 @@ export default async function libraryRoutes(fastify: FastifyInstance) {
    * 获取歌曲详情接口
    * GET /library/tracks/:id
    * 
-   * 需要认证，返回指定歌曲的详细信息，包括歌词和收藏状态
+   * 返回指定歌曲的详细信息，包括歌词和收藏状态
    */
-  fastify.get('/library/tracks/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+  fastify.get('/library/tracks/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
     const db = getDb();
     const trackId = parseId(id);
@@ -134,9 +134,7 @@ export default async function libraryRoutes(fastify: FastifyInstance) {
     }
 
     // 检查是否已收藏
-    const fav = db.prepare('SELECT 1 FROM favorites WHERE user_id = ? AND track_id = ?').get(
-      request.userId, trackId,
-    );
+    const fav = db.prepare('SELECT 1 FROM favorites WHERE track_id = ?').get(trackId);
 
     return reply.send({
       data: {

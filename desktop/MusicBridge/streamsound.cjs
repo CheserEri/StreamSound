@@ -1,6 +1,6 @@
 // StreamSound 桌面端桥接进程。
-// 只通过父子进程私有管道收发 JSON，不写日志，不把令牌输出到日志。
-// 数据来自 StreamSound 自建服务，向上层输出 Rhine 已能解析的结构。
+// 只通过父子进程私有管道收发 JSON，不写日志。
+// 数据来自 StreamSound 自建服务（LAN 内无鉴权），向上层输出 Rhine 已能解析的结构。
 'use strict';
 
 for (const name of ['log', 'info', 'warn', 'error', 'debug', 'trace']) {
@@ -12,67 +12,24 @@ const https = require('node:https');
 const crypto = require('node:crypto');
 const readline = require('node:readline');
 
-const BASE = (process.env.STREAMSOUND_SERVER || 'http://127.0.0.1:8080').replace(/\/+$/, '');
+// 后端地址由偏好经环境变量下发；缺省指向 LAN 内的自建服务，首启即可使用。
+const BASE = (process.env.STREAMSOUND_SERVER || 'http://<server-ip>:8080').replace(/\/+$/, '');
 const SECRET = crypto.randomBytes(18).toString('hex');
 const PAGE = 100;
 
-const state = { access: '', refresh: '', user: null };
 let port = 0;
 let proxyReady = null;
-let refreshFlight = null;
-
-/** 从父进程下发的 cookie 快照恢复令牌；用户信息以 URL 编码的 JSON 保存。 */
-function readCookies(cookies) {
-    if (!cookies || typeof cookies !== 'object') {
-        return;
-    }
-    if (typeof cookies.streamsound_access === 'string') {
-        state.access = cookies.streamsound_access;
-    }
-    if (typeof cookies.streamsound_refresh === 'string') {
-        state.refresh = cookies.streamsound_refresh;
-    }
-    if (typeof cookies.streamsound_user === 'string' && cookies.streamsound_user) {
-        try {
-            const parsed = JSON.parse(decodeURIComponent(cookies.streamsound_user));
-            if (parsed && typeof parsed === 'object') {
-                state.user = parsed;
-            }
-        } catch {
-            state.user = null;
-        }
-    }
-}
-
-/** 令牌随响应回传，父进程沿用既有 cookie 存储落盘。 */
-function cookieList() {
-    const list = [];
-    if (state.access) {
-        list.push(`streamsound_access=${state.access}; Path=/; Max-Age=2592000`);
-    }
-    if (state.refresh) {
-        list.push(`streamsound_refresh=${state.refresh}; Path=/; Max-Age=2592000`);
-    }
-    if (state.user) {
-        list.push(`streamsound_user=${encodeURIComponent(JSON.stringify(state.user))}; Path=/`);
-    }
-    return list;
-}
 
 function proxyUrl(kind, id) {
     return `http://127.0.0.1:${port}/${SECRET}/${kind}/${encodeURIComponent(id)}`;
 }
 
-/** 服务端统一返回 {data, pagination} 或 {error:{message}}。 */
+/** 服务端统一返回 {data, pagination} 或 {error:{message}}；无鉴权，不附带任何凭据。 */
 async function request(path, options = {}) {
     const method = options.method || 'GET';
     const headers = { Accept: 'application/json' };
     if (options.body !== undefined) {
         headers['Content-Type'] = 'application/json';
-    }
-    const token = options.token !== undefined ? options.token : state.access;
-    if (options.auth !== false && token) {
-        headers.Authorization = `Bearer ${token}`;
     }
     let response;
     try {
@@ -97,48 +54,14 @@ async function request(path, options = {}) {
     return { status: response.status, data, message };
 }
 
-/** 访问令牌过期时只刷新一次，并发请求共用同一个刷新过程。 */
-async function refreshToken() {
-    if (!state.refresh) {
-        return false;
-    }
-    if (!refreshFlight) {
-        refreshFlight = request('/auth/refresh', {
-            method: 'POST',
-            body: { refreshToken: state.refresh },
-            auth: false,
-        }).finally(() => {
-            refreshFlight = null;
-        });
-    }
-    const result = await refreshFlight;
-    const data = result.data && result.data.data;
-    if (result.status === 200 && data && data.accessToken) {
-        state.access = data.accessToken;
-        if (data.refreshToken) {
-            state.refresh = data.refreshToken;
-        }
-        return true;
-    }
-    return false;
-}
-
+/** 服务端无鉴权，直接透传请求即可。 */
 async function api(path, options = {}) {
-    let result = await request(path, options);
-    if (result.status === 401 && options.auth !== false && state.refresh) {
-        if (await refreshToken()) {
-            result = await request(path, options);
-        }
-    }
-    return result;
+    return request(path, options);
 }
 
 function failure(result) {
     if (result.status === 0) {
         return { code: 503, message: '音乐服务不可达' };
-    }
-    if (result.status === 401 || result.status === 403) {
-        return { code: 401, message: result.message || '登录已失效', authExpired: true };
     }
     return { code: result.status || 500, message: result.message || `服务返回 ${result.status}` };
 }
@@ -239,41 +162,17 @@ async function folderDetail(id) {
 
 async function dispatch(message) {
     const route = String(message.route || '');
-    readCookies(message.cookies);
     const args = message.params && Array.isArray(message.params.args) ? message.params.args : [];
     const params = message.params && typeof message.params === 'object' ? message.params : {};
 
     try {
-        if (route === '/native/streamsound/login') {
-            const result = await request('/auth/login', {
-                method: 'POST',
-                auth: false,
-                body: { username: String(args[0] || ''), password: String(args[1] || '') },
-            });
+        if (route === '/native/streamsound/server') {
+            // 用健康检查探测后端可达性，返回当前使用的服务器地址。
+            const result = await request('/health');
             if (result.status !== 200) {
-                // 登录失败属于业务错误，不标记为令牌过期。
-                if (result.status === 0) {
-                    return { code: 503, message: '音乐服务不可达' };
-                }
-                return { code: result.status, message: result.message || '登录失败' };
+                return { code: 503, message: '音乐服务不可达' };
             }
-            const data = payload(result) || {};
-            state.access = data.accessToken || '';
-            state.refresh = data.refreshToken || '';
-            state.user = data.user || null;
-            return { code: 200, value: [String(state.user?.id ?? ''), state.user?.username || ''] };
-        }
-        if (route === '/native/streamsound/account') {
-            if (!state.user) {
-                return { code: 401, message: '登录已失效', authExpired: true };
-            }
-            return { code: 200, value: [String(state.user.id ?? ''), state.user.username || ''] };
-        }
-        if (route === '/native/streamsound/logout') {
-            state.access = '';
-            state.refresh = '';
-            state.user = null;
-            return { code: 200, value: null };
+            return { code: 200, value: BASE };
         }
         if (route === '/native/streamsound/search') {
             const query = String(args[0] || '').trim();
@@ -432,7 +331,7 @@ async function dispatch(message) {
     }
 }
 
-/** 本地媒体代理：注入令牌并透传 Range，避免把凭据交给播放器或外部地址。 */
+/** 本地媒体代理：透传 Range，避免把内网地址直接交给播放器。 */
 async function handleProxy(request_, response) {
     const url = new URL(request_.url, 'http://127.0.0.1');
     const parts = url.pathname.split('/').filter(Boolean);
@@ -444,9 +343,6 @@ async function handleProxy(request_, response) {
     const kind = parts[1] === 'covers' ? 'covers' : 'stream';
     const target = `${BASE}/${kind}/${encodeURIComponent(parts[2])}`;
     const headers = {};
-    if (state.access) {
-        headers.Authorization = `Bearer ${state.access}`;
-    }
     if (request_.headers.range) {
         headers.Range = request_.headers.range;
     }
@@ -477,7 +373,8 @@ function startProxy() {
 }
 
 function output(id, body) {
-    process.stdout.write(`${JSON.stringify({ id, body, cookies: cookieList() })}\n`);
+    // 无鉴权，cookies 恒为空数组；保持协议字段不变，Host 侧解析分支无需改动。
+    process.stdout.write(`${JSON.stringify({ id, body, cookies: [] })}\n`);
 }
 
 startProxy();

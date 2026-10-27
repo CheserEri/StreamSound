@@ -168,10 +168,10 @@ Item {
         stage: overlay
         backend: rhine
     }
-    // 验证码只在输入组件和单次登录请求中短暂存在，提交后立即清空。
+    // 通用文本输入：歌单名称与服务器地址共用，提交后立即清空。
     Item {
         id: formFields
-        visible: rhine.state.modal === "playlist-form" || (rhine.state.modal === "login" && rhine.state.loginMethod === "phone")
+        visible: rhine.state.modal === "playlist-form" || rhine.state.modal === "server"
         x: (rhine.state.inputX || 0) * overlay.stageScale
         y: (rhine.state.modalOffset || 0) * overlay.stageScale
         width: (rhine.state.inputWidth || 0) * overlay.stageScale
@@ -179,22 +179,17 @@ Item {
         opacity: rhine.state.modalOpacity || 0
         onVisibleChanged: {
             accountField.text = "";
-            captchaField.text = "";
             if (visible) {
                 accountField.forceActiveFocus();
             }
         }
         function submit() {
-            if (rhine.state.modal === "login" && rhine.state.loginBusy) {
-                return;
-            }
-            rhine.submitForm(accountField.text, captchaField.text);
-            captchaField.text = "";
+            rhine.submitForm(accountField.text, "");
         }
         Rectangle {
             x: 0
             y: 430 * overlay.stageScale
-            width: rhine.state.modal === "login" ? parent.width - 180 * overlay.stageScale : parent.width
+            width: parent.width
             height: 55 * overlay.stageScale
             color: rhine.state.dark ? "#30312b" : "#d9d8ce"
         }
@@ -203,97 +198,26 @@ Item {
             objectName: "accountField"
             x: 14 * overlay.stageScale
             y: 430 * overlay.stageScale
-            width: parent.width - ((rhine.state.modal === "login" && rhine.state.loginMethod !== "password")
-                                   ? 208 : 28) * overlay.stageScale
-            height: 55 * overlay.stageScale
-            verticalAlignment: TextInput.AlignVCenter
-            color: rhine.state.dark ? "#eeeeeb" : "#161914"
-            font.pixelSize: 19 * overlay.stageScale
-            cursorVisible: activeFocus && !rhine.performance.idle
-            maximumLength: rhine.state.modal !== "login" ? 100
-                           : (rhine.state.loginMethod === "password" ? 64 : 11)
-            enabled: rhine.state.modal !== "login" || !rhine.state.loginBusy
-            inputMethodHints: rhine.state.modal !== "login" ? Qt.ImhNone
-                              : (rhine.state.loginMethod === "password" ? Qt.ImhNone : Qt.ImhDigitsOnly)
-            Accessible.name: rhine.state.modal === "playlist-form" ? "歌单名称"
-                             : (rhine.state.loginMethod === "password" ? "用户名" : "手机号码")
-            Keys.onReturnPressed: {
-                if (rhine.state.modal !== "login" || rhine.state.loginMethod === "password") {
-                    formFields.submit();
-                } else {
-                    captchaField.forceActiveFocus();
-                }
-            }
-            Keys.onEscapePressed: rhine.action("close-modal")
-        }
-        Rectangle {
-            visible: rhine.state.modal === "login" && rhine.state.loginMethod === "phone"
-            x: parent.width - width
-            y: 430 * overlay.stageScale
-            width: 170 * overlay.stageScale
-            height: 55 * overlay.stageScale
-            enabled: !rhine.state.loginBusy && rhine.state.smsRetrySeconds === 0 && accountField.text.length === 11
-            color: "#777b60"
-            opacity: enabled ? 1 : 0.5
-            Text {
-                anchors.centerIn: parent
-                text: rhine.state.smsRetrySeconds > 0 ? rhine.state.smsRetrySeconds + " 秒后重发" : "发送验证码"
-                color: "#f0eee5"
-                font.pixelSize: 14 * overlay.stageScale
-            }
-            Accessible.role: Accessible.Button
-            Accessible.name: "发送短信验证码"
-            Accessible.onPressAction: {
-                if (enabled) {
-                    rhine.sendLoginCode(accountField.text);
-                }
-            }
-            MouseArea {
-                anchors.fill: parent
-                onClicked: rhine.sendLoginCode(accountField.text)
-            }
-        }
-        Rectangle {
-            visible: rhine.state.modal === "login"
-            x: 0
-            y: 541 * overlay.stageScale
-            width: parent.width
-            height: 55 * overlay.stageScale
-            color: rhine.state.dark ? "#30312b" : "#d9d8ce"
-        }
-        TextInput {
-            id: captchaField
-            objectName: "captchaField"
-            visible: rhine.state.modal === "login"
-            x: 14 * overlay.stageScale
-            y: 541 * overlay.stageScale
             width: parent.width - 28 * overlay.stageScale
             height: 55 * overlay.stageScale
             verticalAlignment: TextInput.AlignVCenter
             color: rhine.state.dark ? "#eeeeeb" : "#161914"
             font.pixelSize: 19 * overlay.stageScale
             cursorVisible: activeFocus && !rhine.performance.idle
-            maximumLength: rhine.state.loginMethod === "password" ? 100 : 8
-            enabled: !rhine.state.loginBusy
-            echoMode: rhine.state.loginMethod === "password" ? TextInput.Password : TextInput.Normal
-            inputMethodHints: rhine.state.loginMethod === "password"
-                               ? Qt.ImhSensitiveData | Qt.ImhNoPredictiveText
-                               : Qt.ImhDigitsOnly | Qt.ImhSensitiveData
-            Accessible.name: rhine.state.loginMethod === "password" ? "密码" : "短信验证码"
+            maximumLength: rhine.state.modal === "server" ? 512 : 100
+            Accessible.name: rhine.state.modal === "server" ? "服务器地址" : "歌单名称"
             Keys.onReturnPressed: formFields.submit()
             Keys.onEscapePressed: rhine.action("close-modal")
         }
         Rectangle {
             x: parent.width - width
-            y: (rhine.state.modal === "login" ? 611 : 530) * overlay.stageScale
-            enabled: rhine.state.modal !== "login" || !rhine.state.loginBusy
+            y: 530 * overlay.stageScale
             width: 170 * overlay.stageScale
             height: 36 * overlay.stageScale
             color: "#777b60"
-            opacity: enabled ? 1 : 0.5
             Text {
                 anchors.centerIn: parent
-                text: rhine.state.modal === "login" ? "登录 →" : "保存 →"
+                text: "保存 →"
                 color: "#f0eee5"
                 font.pixelSize: 14 * overlay.stageScale
             }

@@ -208,14 +208,11 @@ class NativeHud : public QObject {
     void viewer(double width);
     std::array<double, 2> rowMotion(const QString &signature, int index);
     void modalDraw(double width);
-    void loginPanel(double x, double y, double width);
     void libraryPanel(double x, double y, double width);
     void discoverPanel(double x, double y, double width);
     void localPanel(double x, double y, double width);
     void playerBar(double x, double y, double width);
     void playerPanel(double x, double y, double width);
-    void platformChoices(double x, double y, double width, bool expanded = false);
-    void platformPanel(double x, double y, double width);
     void settings(double x, double y, double width);
     void qualityPanel(double x, double y, double width);
     void qualityChoice(const QString &id, int number, double x, double y, double width, bool featured);
